@@ -1,0 +1,84 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+road #
+ ipsec start
+Redirecting to: [initsystem]
+road #
+ ../../guestbin/wait-until-pluto-started
+road #
+ ipsec auto --add road-east
+002 "road-east": added IKEv2 connection
+road #
+ # we cannot have --impair retransmit, because for some reason
+road #
+ # first IKE_AUTH request road sends is actually retransmitted once.
+road #
+ ipsec whack --impair revival
+road #
+ echo initdone
+initdone
+road #
+ ipsec auto --up road-east
+1v2 "road-east" #1: initiating IKEv2 connection
+1v2 "road-east" #1: sent IKE_SA_INIT request
+002 "road-east" #1: initiating a redirect to new gateway (address: 192.1.2.45)
+1v2 "road-east" #2: initiating IKEv2 connection
+002 "road-east" #1: deleting state (STATE_IKESA_DEL) and NOT sending notification
+002 "road-east" #1: IMPAIR: skipping revival of connection that is supposed to remain up
+1v2 "road-east" #2: sent IKE_SA_INIT request
+1v2 "road-east" #2: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+003 "road-east" #2: authenticated using RSA with SHA2_512 and peer certificate 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org' issued by CA 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=Libreswan test CA for mainca, E=testing@libreswan.org'
+002 "road-east" #3: received INTERNAL_IP4_ADDRESS 192.0.2.101
+002 "road-east" #3: received INTERNAL_IP4_DNS 1.2.3.4
+002 "road-east" #3: received INTERNAL_IP4_DNS 5.6.7.8
+002 "road-east" #3: up-client output: updating resolvconf
+002 "road-east" #3: negotiated connection [192.0.2.101-192.0.2.101:0-65535 0] -> [0.0.0.0-255.255.255.255:0-65535 0]
+004 "road-east" #3: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE NATOA=none NATD=none DPD=passive}
+road #
+ echo "1. road connection add+up done"
+1. road connection add+up done
+road #
+ sleep 1
+road #
+ # should be connected to west!
+road #
+ ../../guestbin/ping-once.sh --up 192.0.2.254
+up
+road #
+ ipsec whack --trafficstatus
+006 #3: "road-east", type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org', lease=192.0.2.101/32
+road #
+ ipsec auto --delete road-east
+002 "road-east": terminating SAs using this connection
+002 "road-east" #3: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "road-east" #3: ESP traffic information: in=84B out=84B
+002 "road-east" #3: down-client output: restoring resolvconf
+002 "road-east" #2: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+road #
+ echo "1. road connection delete done"
+1. road connection delete done
+road #
+ ipsec auto --add road-east
+002 "road-east": added IKEv2 connection
+road #
+ ipsec whack --impair delete-on-retransmit
+road #
+ ipsec auto --up road-east
+1v2 "road-east" #4: initiating IKEv2 connection
+1v2 "road-east" #4: sent IKE_SA_INIT request
+002 "road-east" #4: initiating a redirect to new gateway (address: 192.1.2.44)
+1v2 "road-east" #5: initiating IKEv2 connection
+1v2 "road-east" #5: sent IKE_SA_INIT request
+002 "road-east" #4: deleting state (STATE_IKESA_DEL) and NOT sending notification
+002 "road-east" #4: IMPAIR: skipping revival of connection that is supposed to remain up
+002 "road-east" #5: IMPAIR: retransmit so deleting SA
+002 "road-east" #5: deleting state (STATE_PARENT_I1) and NOT sending notification
+002 "road-east" #5: IMPAIR: skipping revival of connection that is supposed to remain up
+road #
+ echo "2. road connection add+up done"
+2. road connection add+up done
+road #
+ ipsec whack --trafficstatus
+road #
+ ipsec whack --shutdown
+

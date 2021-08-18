@@ -1,0 +1,79 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+north #
+ ipsec start
+Redirecting to: [initsystem]
+north #
+ ../../guestbin/wait-until-pluto-started
+north #
+ ipsec auto --add north-east
+002 "north-east": added IKEv1 connection
+north #
+ ipsec whack --impair suppress-retransmits
+north #
+ echo "initdone"
+initdone
+north #
+ ipsec auto --up north-east
+002 "north-east" #1: initiating IKEv1 Aggressive Mode connection
+002 "north-east" #1: I am sending a certificate request
+1v1 "north-east" #1: sent Aggressive Mode request
+002 "north-east" #1: Peer ID is ID_DER_ASN1_DN: 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org'
+002 "north-east" #1: certificate verified OK: E=user-east@testing.libreswan.org,CN=east.testing.libreswan.org,OU=Test Department,O=Libreswan,L=Toronto,ST=Ontario,C=CA
+003 "north-east" #1: authenticated using RSA with SHA1 and peer certificate 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org' issued by CA 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=Libreswan test CA for mainca, E=testing@libreswan.org'
+002 "north-east" #1: I am sending my cert
+004 "north-east" #1: IKE SA established {auth=RSA_SIG cipher=AES_CBC_128 integ=HMAC_SHA1 group=MODP2048}
+002 "north-east" #2: initiating Quick Mode IKEv1+RSASIG+ENCRYPT+TUNNEL+PFS+UP+AGGRESSIVE+IKE_FRAG_ALLOW+ESN_NO
+1v1 "north-east" #2: sent Quick Mode request
+004 "north-east" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_128-HMAC_SHA1_96 NATOA=none NATD=none DPD=passive}
+north #
+ # change ip to a new one and restart pluto
+north #
+ # PAUL: should no longer matter!
+north #
+ ip addr del 192.1.3.33/24 dev eth1
+north #
+ ip addr add 192.1.3.34/24 dev eth1
+north #
+ ip route add 0.0.0.0/0 via 192.1.3.254 dev eth1
+north #
+ ipsec whack --impair send-no-delete
+north #
+ ipsec restart
+Redirecting to: [initsystem]
+north #
+ ../../guestbin/wait-until-pluto-started
+north #
+ # temp while the test still fails
+north #
+ ipsec whack --impair suppress-retransmits
+north #
+ ipsec auto --add north-east
+002 "north-east": added IKEv1 connection
+north #
+ ipsec auto --up north-east
+002 "north-east" #1: initiating IKEv1 Aggressive Mode connection
+002 "north-east" #1: I am sending a certificate request
+1v1 "north-east" #1: sent Aggressive Mode request
+002 "north-east" #1: Peer ID is ID_DER_ASN1_DN: 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org'
+002 "north-east" #1: certificate verified OK: E=user-east@testing.libreswan.org,CN=east.testing.libreswan.org,OU=Test Department,O=Libreswan,L=Toronto,ST=Ontario,C=CA
+003 "north-east" #1: authenticated using RSA with SHA1 and peer certificate 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org' issued by CA 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=Libreswan test CA for mainca, E=testing@libreswan.org'
+002 "north-east" #1: I am sending my cert
+004 "north-east" #1: IKE SA established {auth=RSA_SIG cipher=AES_CBC_128 integ=HMAC_SHA1 group=MODP2048}
+002 "north-east" #2: initiating Quick Mode IKEv1+RSASIG+ENCRYPT+TUNNEL+PFS+UP+AGGRESSIVE+IKE_FRAG_ALLOW+ESN_NO
+1v1 "north-east" #2: sent Quick Mode request
+004 "north-east" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_128-HMAC_SHA1_96 NATOA=none NATD=none DPD=passive}
+north #
+ echo done
+done
+north #
+ # should not match anything
+north #
+ grep "already in use" /tmp/pluto.log
+north #
+ # should only show 1 connection
+north #
+ hostname | grep nic > /dev/null || ipsec whack --trafficstatus
+006 #2: "north-east", type=ESP, add_time=1234567890, inBytes=0, outBytes=0, id='C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org'
+north #
+ 

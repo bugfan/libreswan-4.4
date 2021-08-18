@@ -1,0 +1,75 @@
+/testing/guestbin/swan-prep
+road #
+ ifconfig eth0 inet 192.1.3.174
+road #
+ route add -net default gw 192.1.3.254
+road #
+ ipsec start
+Redirecting to: [initsystem]
+road #
+ ../../guestbin/wait-until-pluto-started
+road #
+ ipsec auto --add road-east-psk
+002 "road-east-psk": added IKEv1 connection
+road #
+ echo "initdone"
+initdone
+road #
+ ipsec whack --debug-all
+road #
+ ipsec auto --up road-east-psk
+002 "road-east-psk" #1: initiating IKEv1 Main Mode connection
+1v1 "road-east-psk" #1: sent Main Mode request
+1v1 "road-east-psk" #1: sent Main Mode I2
+1v1 "road-east-psk" #1: sent Main Mode I3
+004 "road-east-psk" #1: IKE SA established {auth=PRESHARED_KEY cipher=3DES_CBC_192 integ=HMAC_SHA1 group=MODP2048}
+002 "road-east-psk" #2: initiating Quick Mode IKEv1+PSK+ENCRYPT+TUNNEL+PFS+UP+IKE_FRAG_ALLOW+ESN_NO
+1v1 "road-east-psk" #2: sent Quick Mode request
+004 "road-east-psk" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_128-HMAC_SHA1_96 NATOA=none NATD=none DPD=passive}
+road #
+ ../../guestbin/ping-once.sh --up 192.1.2.23
+up
+road #
+ ipsec whack --trafficstatus
+006 #2: "road-east-psk", type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='192.1.2.23'
+road #
+ echo done
+done
+road #
+ ../../guestbin/ipsec-look.sh
+road NOW
+XFRM state:
+src 192.1.2.23 dst 192.1.3.174
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	auth-trunc hmac(sha1) 0xHASHKEY 96
+	enc cbc(aes) 0xENCKEY
+src 192.1.3.174 dst 192.1.2.23
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	auth-trunc hmac(sha1) 0xHASHKEY 96
+	enc cbc(aes) 0xENCKEY
+XFRM policy:
+src 192.1.2.23/32 dst 192.1.3.174/32
+	dir fwd priority 2080702 ptype main
+	tmpl src 192.1.2.23 dst 192.1.3.174
+		proto esp reqid REQID mode tunnel
+src 192.1.2.23/32 dst 192.1.3.174/32
+	dir in priority 2080702 ptype main
+	tmpl src 192.1.2.23 dst 192.1.3.174
+		proto esp reqid REQID mode tunnel
+src 192.1.3.174/32 dst 192.1.2.23/32
+	dir out priority 2080702 ptype main
+	tmpl src 192.1.3.174 dst 192.1.2.23
+		proto esp reqid REQID mode tunnel
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+default via 192.1.3.254 dev eth0
+192.1.3.0/24 dev eth0 proto kernel scope link src 192.1.3.174
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+road #
+ 

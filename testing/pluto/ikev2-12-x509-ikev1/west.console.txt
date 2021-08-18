@@ -1,0 +1,111 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+west #
+ ipsec _stackmanager start
+west #
+ # confirm that the network is alive
+west #
+ ../../guestbin/wait-until-alive -I 192.0.1.254 192.0.2.254
+destination -I 192.0.1.254 192.0.2.254 is alive
+west #
+ # ensure that clear text does not get through
+west #
+ iptables -A INPUT -i eth1 -s 192.0.2.0/24 -j DROP
+west #
+ iptables -I INPUT -m policy --dir in --pol ipsec -j ACCEPT
+west #
+ ipsec pluto --config /etc/ipsec.conf
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-eastnet-ikev2
+002 "westnet-eastnet-ikev2": added IKEv1 connection
+west #
+ ipsec auto --status | grep westnet-eastnet-ikev2
+000 "westnet-eastnet-ikev2": 192.0.1.0/24===192.1.2.45<192.1.2.45>[%fromcert]...192.1.2.23<192.1.2.23>[%fromcert]===192.0.2.0/24; unrouted; eroute owner: #0
+000 "westnet-eastnet-ikev2":     oriented; my_ip=unset; their_ip=unset; my_updown=ipsec _updown;
+000 "westnet-eastnet-ikev2":   xauth us:none, xauth them:none,  my_username=[any]; their_username=[any]
+000 "westnet-eastnet-ikev2":   our auth:rsasig, their auth:rsasig
+000 "westnet-eastnet-ikev2":   modecfg info: us:none, them:none, modecfg policy:push, dns:unset, domains:unset, cat:unset;
+000 "westnet-eastnet-ikev2":   sec_label:unset;
+000 "westnet-eastnet-ikev2":   ike_life: 28800s; ipsec_life: 28800s; replay_window: 32; rekey_margin: 540s; rekey_fuzz: 100%; keyingtries: 0;
+000 "westnet-eastnet-ikev2":   retransmit-interval: 9999ms; retransmit-timeout: 99s; iketcp:no; iketcp-port:4500;
+000 "westnet-eastnet-ikev2":   initial-contact:no; cisco-unity:no; fake-strongswan:no; send-vendorid:no; send-no-esp-tfc:no;
+000 "westnet-eastnet-ikev2":   policy: IKEv1+RSASIG+ENCRYPT+TUNNEL+PFS+IKE_FRAG_ALLOW+ESN_NO;
+000 "westnet-eastnet-ikev2":   conn_prio: 24,24; interface: eth1; metric: 0; mtu: unset; sa_prio:auto; sa_tfc:none;
+000 "westnet-eastnet-ikev2":   nflog-group: unset; mark: unset; vti-iface:unset; vti-routing:no; vti-shared:no; nic-offload:auto;
+000 "westnet-eastnet-ikev2":   our idtype: %fromcert; our id=%fromcert; their idtype: %fromcert; their id=%fromcert
+000 "westnet-eastnet-ikev2":   dpd: action:hold; delay:0; timeout:0; nat-t: encaps:auto; nat_keepalive:yes; ikev1_natt:both
+000 "westnet-eastnet-ikev2":   newest ISAKMP SA: #0; newest IPsec SA: #0; conn serial: $1;
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec auto --up westnet-eastnet-ikev2 #retransmits
+002 "westnet-eastnet-ikev2" #1: initiating IKEv1 Main Mode connection
+1v1 "westnet-eastnet-ikev2" #1: sent Main Mode request
+010 "westnet-eastnet-ikev2" #1: STATE_MAIN_I1: retransmission; will wait 0.5 seconds for response
+010 "westnet-eastnet-ikev2" #1: STATE_MAIN_I1: retransmission; will wait 1 seconds for response
+010 "westnet-eastnet-ikev2" #1: STATE_MAIN_I1: retransmission; will wait 2 seconds for response
+010 "westnet-eastnet-ikev2" #1: STATE_MAIN_I1: retransmission; will wait 4 seconds for response
+010 "westnet-eastnet-ikev2" #1: STATE_MAIN_I1: retransmission; will wait 8 seconds for response
+010 "westnet-eastnet-ikev2" #1: STATE_MAIN_I1: retransmission; will wait 16 seconds for response
+010 "westnet-eastnet-ikev2" #1: STATE_MAIN_I1: retransmission; will wait 32 seconds for response
+031 "westnet-eastnet-ikev2" #1: STATE_MAIN_I1: 60 second timeout exceeded after 7 retransmits.  No response (or no acceptable response) to our first IKEv1 message
+000 "westnet-eastnet-ikev2" #1: starting keying attempt 2 of an unlimited number, but releasing whack
+west #
+ ../../guestbin/ping-once.sh --down -I 192.0.1.254 192.0.2.254
+down
+west #
+ ../../guestbin/ipsec-look.sh
+west NOW
+XFRM state:
+XFRM policy:
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+default via 192.1.2.254 dev eth1
+192.0.1.0/24 dev eth0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 via 192.1.2.23 dev eth1
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+Libreswan test CA for mainca - Libreswan                     CT,, 
+east                                                         P,,  
+east-ec                                                      P,,  
+hashsha1                                                     P,,  
+nic                                                          P,,  
+north                                                        P,,  
+road                                                         P,,  
+west                                                         u,u,u
+west #
+ echo done
+done
+west #
+ ../../guestbin/ipsec-look.sh
+west NOW
+XFRM state:
+XFRM policy:
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+default via 192.1.2.254 dev eth1
+192.0.1.0/24 dev eth0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 via 192.1.2.23 dev eth1
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+Libreswan test CA for mainca - Libreswan                     CT,, 
+east                                                         P,,  
+east-ec                                                      P,,  
+hashsha1                                                     P,,  
+nic                                                          P,,  
+north                                                        P,,  
+road                                                         P,,  
+west                                                         u,u,u
+west #
+ 

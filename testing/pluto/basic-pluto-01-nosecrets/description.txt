@@ -1,0 +1,21 @@
+ikev1 test with keyid+rsasigkey+raw key
+
+This is kind of the converse of ikev2-03-basic-rawrsa-ckaid.
+
+- the NSS db contains west's raw private key
+
+- a connection specifying:
+  -- east/west's IDs
+  -- east/west's RSASIGKEY (i.e., raw signatures)
+  is loaded.
+
+- trying to up the connection fails because the private key can't be
+  found:
+
+| looking connection westnet-eastnet's RSA private key
+| lsw_get_secret() using IDs for @west->@east of kind PKK_RSA
+| concluding with best_match=000 best=(nil) (lineno=-1)
+| connection westnet-eastnet's RSA private key not found
+"westnet-eastnet" #1: unable to locate my private key for RSA Signature
+
+It should try the public key's ckaid instead?

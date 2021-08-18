@@ -1,0 +1,32 @@
+The following people have contributed major resources or significant
+patches to The Libreswan Project.
+
+Avesh Agarwal <avagarwa@redhat.com>
+Antony Antony <antony@phenome.org>
+Richard Guy Briggs <rgb@tricolour.ca>
+Andrew Cagney <andrew.cagney@gmail.com>
+Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+Wes Hardaker <opensource@hardakers.net>
+Kim B. Heino <b@bbbs.net>
+Vukasin Karadzic <vukasin.karadzic@gmail.com>
+Yulia Kuzovkova <ukuzovkova@gmail.com>
+David McCullough <david_mccullough@mcafee.com>
+Amir Naftali <amir@fortycloud.com>
+Wolfgang Nothdurft <wolfgang@linogate.de>
+Sahana Prasad <sahana@redhat.com>
+Hugh Redelmeier <hugh@mimosa.com>
+Lubomir Rintel <lkundrak@v3.sk>
+Matt Rogers <mrogers@redhat.com>
+Tuomo Soini <tis@foobar.fi>
+Ravi Teja <hello@rtcms.dev>
+Philippe Vouters <Philippe.Vouters@laposte.net>
+Paul Wouters <pwouters@redhat.com>
+Herbert Xu <herbert@gondor.apana.org.au>
+
+Libreswan is a fork of the Openswan 2.6.38 codebase.
+Please see the docs/CREDITS.openswan file from Openswan for details on
+original work.
+
+Openswan is a fork of the FreeS/WAN 2.04 codebase.
+Please see the docs/CREDITS.freeswan file from FreeS/WAN for details on
+original work.

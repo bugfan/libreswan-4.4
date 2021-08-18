@@ -1,0 +1,7 @@
+echo "initdone"
+initdone
+west #
+ echo done
+done
+west #
+ 

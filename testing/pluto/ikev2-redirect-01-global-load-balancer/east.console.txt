@@ -1,0 +1,20 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+east #
+ ip route del 192.0.1.0/24
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add east-any
+002 "east-any": added IKEv2 connection
+east #
+ echo initdone
+initdone
+east #
+ ipsec whack --trafficstatus
+east #
+ ipsec whack --shutdown
+

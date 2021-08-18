@@ -1,0 +1,34 @@
+/testing/guestbin/swan-prep --x509 --x509name west-nosan
+Preparing X.509 files
+west #
+ certutil -D -n east -d sql:/etc/ipsec.d
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add ikev2-westnet-eastnet-x509-cr
+002 "ikev2-westnet-eastnet-x509-cr": added IKEv2 connection
+west #
+ ipsec status | grep idtype
+000 "ikev2-westnet-eastnet-x509-cr":   our idtype: ID_IPV4_ADDR; our id=192.1.2.45; their idtype: ID_IPV4_ADDR; their id=192.1.2.23
+west #
+ ipsec whack --impair suppress-retransmits
+west #
+ echo "initdone"
+initdone
+west #
+ # should fail
+west #
+ ipsec auto --up ikev2-westnet-eastnet-x509-cr
+1v2 "ikev2-westnet-eastnet-x509-cr" #1: initiating IKEv2 connection
+1v2 "ikev2-westnet-eastnet-x509-cr" #1: sent IKE_SA_INIT request
+1v2 "ikev2-westnet-eastnet-x509-cr" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+002 "ikev2-westnet-eastnet-x509-cr" #1: IKE SA authentication request rejected by peer: AUTHENTICATION_FAILED
+000 "ikev2-westnet-eastnet-x509-cr" #2: scheduling retry attempt 1 of an unlimited number, but releasing whack
+west #
+ echo "done"
+done
+west #
+ 

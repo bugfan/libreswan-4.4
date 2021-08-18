@@ -1,0 +1,24 @@
+/testing/guestbin/swan-prep
+east #
+ gcc -fPIC -fno-stack-protector  -o OUTPUT/mypam.o -c mypam.c
+east #
+ ld -x --shared -o /lib64/security/mypam.so OUTPUT/mypam.o
+east #
+ test -f /etc/pam.d/pluto && mv /etc/pam.d/pluto /etc/pam.d/pluto.stock
+east #
+ cp pluto.pam /etc/pam.d/pluto
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add road-eastnet-pam
+002 "road-eastnet-pam": added IKEv2 connection
+east #
+ echo "initdone"
+initdone
+east #
+ if [ -f /etc/pam.d/pluto.stock ]; then mv /etc/pam.d/pluto.stock /etc/pam.d/pluto ; fi
+east #
+ 

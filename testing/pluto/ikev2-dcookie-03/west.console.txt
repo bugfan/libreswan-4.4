@@ -1,0 +1,30 @@
+/testing/guestbin/swan-prep
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec whack --impair send-bogus-dcookie
+west #
+ ipsec auto --add westnet-eastnet-ikev2
+002 "westnet-eastnet-ikev2": added IKEv2 connection
+west #
+ echo "initdone"
+initdone
+west #
+ # expected to fail due to bad dcookie
+west #
+ ipsec auto --up westnet-eastnet-ikev2 #retransmits
+1v2 "westnet-eastnet-ikev2" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-ikev2" #1: sent IKE_SA_INIT request
+010 "westnet-eastnet-ikev2" #1: STATE_PARENT_I1: retransmission; will wait 1 seconds for response
+010 "westnet-eastnet-ikev2" #1: STATE_PARENT_I1: retransmission; will wait 2 seconds for response
+010 "westnet-eastnet-ikev2" #1: STATE_PARENT_I1: retransmission; will wait 4 seconds for response
+031 "westnet-eastnet-ikev2" #1: STATE_PARENT_I1: 5 second timeout exceeded after 3 retransmits.  No response (or no acceptable response) to our first IKEv2 message
+000 "westnet-eastnet-ikev2" #1: starting keying attempt 2 of an unlimited number, but releasing whack
+west #
+ echo done
+done
+west #
+ 

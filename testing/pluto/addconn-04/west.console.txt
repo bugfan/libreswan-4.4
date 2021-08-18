@@ -1,0 +1,74 @@
+/testing/guestbin/swan-prep
+west #
+ cp test.conf /tmp/test.conf
+west #
+ ipsec pluto --config /tmp/test.conf
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ echo "initdone"
+initdone
+west #
+ # did pluto forked addconn pickup right config file location and load the connection
+west #
+ ipsec status | grep westnet-eastnet-ipv4-psk-ikev2 | grep "eroute owner"
+000 "westnet-eastnet-ipv4-psk-ikev2": 192.0.1.0/24===192.1.2.45<192.1.2.45>[@west]...192.1.2.23<192.1.2.23>[@east]===192.0.2.0/24; unrouted; eroute owner: #0
+west #
+ # does status show /tmp/test.conf as config file used for startup
+west #
+ ipsec status | grep configfile
+000 configdir=/etc, configfile=/tmp/test.conf, secrets=/etc/ipsec.secrets, ipsecdir=/etc/ipsec.d
+west #
+ # rhbz#1645137 test
+west #
+ ipsec addconn --config /tmp/test.conf longike
+002 "longike": added IKEv2 connection
+west #
+ ipsec whack --shutdown # stop will cause reading /etc/ipsec.conf
+west #
+ # rhbz#1625303 test
+west #
+ cp bomb.conf /etc/ipsec.conf
+west #
+ cp include-bomb.conf /etc/ipsec.d/
+west #
+ restorecon /etc/ipsec.conf /etc/ipsec.d/include-bomb.conf
+west #
+ # should fail properly at maxdepth recursion
+west #
+ ipsec addconn --verbose --config /etc/ipsec.conf --checkconfig
+opening file: /etc/ipsec.conf
+debugging mode enabled
+including file '/etc/ipsec.d/include-bomb.conf' ('/etc/ipsec.d/include-bomb.conf') from /etc/ipsec.conf:9
+including file '/etc/ipsec.d/include-bomb.conf' ('/etc/ipsec.d/include-bomb.conf') from /etc/ipsec.d/include-bomb.conf:3
+including file '/etc/ipsec.d/include-bomb.conf' ('/etc/ipsec.d/include-bomb.conf') from /etc/ipsec.d/include-bomb.conf:3
+including file '/etc/ipsec.d/include-bomb.conf' ('/etc/ipsec.d/include-bomb.conf') from /etc/ipsec.d/include-bomb.conf:3
+including file '/etc/ipsec.d/include-bomb.conf' ('/etc/ipsec.d/include-bomb.conf') from /etc/ipsec.d/include-bomb.conf:3
+including file '/etc/ipsec.d/include-bomb.conf' ('/etc/ipsec.d/include-bomb.conf') from /etc/ipsec.d/include-bomb.conf:3
+including file '/etc/ipsec.d/include-bomb.conf' ('/etc/ipsec.d/include-bomb.conf') from /etc/ipsec.d/include-bomb.conf:3
+including file '/etc/ipsec.d/include-bomb.conf' ('/etc/ipsec.d/include-bomb.conf') from /etc/ipsec.d/include-bomb.conf:3
+including file '/etc/ipsec.d/include-bomb.conf' ('/etc/ipsec.d/include-bomb.conf') from /etc/ipsec.d/include-bomb.conf:3
+end of file /etc/ipsec.d/include-bomb.conf
+resuming /etc/ipsec.d/include-bomb.conf:3
+end of file /etc/ipsec.d/include-bomb.conf
+resuming /etc/ipsec.d/include-bomb.conf:3
+end of file /etc/ipsec.d/include-bomb.conf
+resuming /etc/ipsec.d/include-bomb.conf:3
+end of file /etc/ipsec.d/include-bomb.conf
+resuming /etc/ipsec.d/include-bomb.conf:3
+end of file /etc/ipsec.d/include-bomb.conf
+resuming /etc/ipsec.d/include-bomb.conf:3
+end of file /etc/ipsec.d/include-bomb.conf
+resuming /etc/ipsec.d/include-bomb.conf:3
+end of file /etc/ipsec.d/include-bomb.conf
+resuming /etc/ipsec.d/include-bomb.conf:3
+end of file /etc/ipsec.d/include-bomb.conf
+resuming /etc/ipsec.d/include-bomb.conf:3
+end of file /etc/ipsec.d/include-bomb.conf
+resuming /etc/ipsec.conf:9
+end of file /etc/ipsec.conf
+west #
+ echo done
+done
+west #
+ 

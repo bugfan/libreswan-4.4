@@ -1,0 +1,24 @@
+/testing/guestbin/swan-prep
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ # These should load
+west #
+ ipsec auto --add base
+002 "base": added IKEv1 connection
+west #
+ ipsec auto --add subnet4
+002 "subnet4": added IKEv1 connection
+west #
+ ipsec auto --add subnet6-good
+002 "subnet6-good": added IKEv1 connection
+west #
+ # this one should fail to load
+west #
+ ipsec auto --add subnet6-bad
+036 "subnet6-bad": failed to add connection: subnets must have the same address family
+west #
+ 

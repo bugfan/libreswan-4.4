@@ -1,0 +1,44 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+west #
+ certutil -D -n east -d sql:/etc/ipsec.d
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add san
+002 "san": added IKEv1 connection
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec whack --impair delete-on-retransmit
+west #
+ # this should fail
+west #
+ ipsec auto --up san
+002 "san" #1: initiating IKEv1 Aggressive Mode connection
+002 "san" #1: I am sending a certificate request
+1v1 "san" #1: sent Aggressive Mode request
+002 "san" #1: Peer ID is ID_USER_FQDN: 'NOTeast@testing.libreswan.org'
+002 "san" #1: certificate verified OK: E=user-east@testing.libreswan.org,CN=east.testing.libreswan.org,OU=Test Department,O=Libreswan,L=Toronto,ST=Ontario,C=CA
+003 "san" #1: certificate subjectAltName extension does not match ID_USER_FQDN 'NOTeast@testing.libreswan.org'
+002 "san" #1: Peer CERT payload SubjectAltName does not match peer ID for this connection
+002 "san" #1: X509: CERT payload does not match connection ID
+003 "san" #1: initial Aggressive Mode packet claiming to be from NOTeast@testing.libreswan.org on 192.1.2.23:500 but no connection has been authorized
+218 "san" #1: sending notification INVALID_ID_INFORMATION to 192.1.2.23:500
+002 "san" #1: IMPAIR: retransmit so deleting SA
+002 "san" #1: deleting state (STATE_AGGR_I1) and NOT sending notification
+002 "san" #1: deleting IKE SA but connection is supposed to remain up; schedule EVENT_REVIVE_CONNS
+west #
+ echo "done"
+done
+west #
+ # confirm the right ID types were sent/received
+west #
+ grep "ID type" /tmp/pluto.log | sort | uniq
+|    ID type: ID_USER_FQDN (0x3)
+west #
+ 

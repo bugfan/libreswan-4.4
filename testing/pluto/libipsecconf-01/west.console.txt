@@ -1,0 +1,23 @@
+/testing/guestbin/swan-prep
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ sleep 3
+west #
+ # add a connection to test adddconn as well
+west #
+ ipsec auto --add west
+002 "west": added IKEv1 connection
+west #
+ # there should be something to shutdown, proving we started properly
+west #
+ ipsec whack --shutdown
+west #
+ echo done
+done
+west #
+ 

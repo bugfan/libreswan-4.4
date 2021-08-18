@@ -1,0 +1,70 @@
+/testing/guestbin/swan-prep --hostname north
+road #
+ iptables -A INPUT -i eth0 -s 192.1.2.0/24 -p icmp -j DROP
+road #
+ iptables -I INPUT -m policy --dir in --pol ipsec -j ACCEPT
+road #
+ ipsec start
+Redirecting to: [initsystem]
+road #
+ ../../guestbin/wait-until-pluto-started
+road #
+ ipsec auto --add road-east-ikev2
+002 "road-east-ikev2": added IKEv2 connection
+road #
+ ipsec whack --impair suppress-retransmits
+road #
+ # road should have only one public key of its own
+road #
+ ipsec auto --listpubkeys
+000  
+000 List of Public Keys:
+000  
+000 TIMESTAMP, 2192 RSA Key AQPl33O2P (has private key), until --- -- --:--:-- ---- ok (expires never)
+000        ID_FQDN '@north.testing.libreswan.org'
+road #
+ ipsec whack --trafficstatus
+road #
+ echo "initdone"
+initdone
+road #
+ # there should be only one pub key not road.
+road #
+ ipsec auto --listpubkeys
+000  
+000 List of Public Keys:
+000  
+000 TIMESTAMP, 2192 RSA Key AQPl33O2P (has private key), until --- -- --:--:-- ---- ok (expires never)
+000        ID_FQDN '@north.testing.libreswan.org'
+road #
+ ipsec auto --up road-east-ikev2
+1v2 "road-east-ikev2" #1: initiating IKEv2 connection
+1v2 "road-east-ikev2" #1: sent IKE_SA_INIT request
+1v2 "road-east-ikev2" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+002 "road-east-ikev2" #1: IKE SA authentication request rejected by peer: AUTHENTICATION_FAILED
+000 "road-east-ikev2" #2: scheduling retry attempt 1 of an unlimited number, but releasing whack
+road #
+ # there should be two public keys. including road
+road #
+ ping -n -q -c 4 -I 192.1.3.209 192.1.2.23
+PING 192.1.2.23 (192.1.2.23) from 192.1.3.209 : 56(84) bytes of data.
+--- 192.1.2.23 ping statistics ---
+4 packets transmitted, 0 received, 100% packet loss, time XXXX
+road #
+ ipsec whack --trafficstatus
+road #
+ echo done
+done
+road #
+ # both ends should have two public keys.The second from reverse dns
+road #
+ ipsec auto --listpubkeys
+000  
+000 List of Public Keys:
+000  
+000 TIMESTAMP, 2192 RSA Key AQPl33O2P (has private key), until --- -- --:--:-- ---- ok (expires never)
+000        ID_FQDN '@north.testing.libreswan.org'
+road #
+ ipsec whack --trafficstatus
+road #
+ 

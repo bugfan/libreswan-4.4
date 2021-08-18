@@ -1,0 +1,188 @@
+/testing/guestbin/swan-prep
+west #
+ # confirm that the network is alive
+west #
+ ../../guestbin/wait-until-alive 192.1.2.23
+destination 192.1.2.23 is alive
+west #
+ # ensure that clear text does not get through
+west #
+ iptables -A INPUT -i eth1 -s 192.0.2.0/24 -j DROP
+west #
+ iptables -A INPUT -i eth1 -s 10.0.2.0/24 -j DROP
+west #
+ iptables -I INPUT -m policy --dir in --pol ipsec -j ACCEPT
+west #
+ # remove this address from eth0. It will come back on vti
+west #
+ ip addr show dev eth0 | grep 192.0.1.254 && ip addr del 192.0.1.254/24 dev eth0
+    inet 192.0.1.254/24 scope global eth0
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-eastnet-vti-01
+002 "westnet-eastnet-vti-01": added IKEv2 connection
+west #
+ ipsec auto --add westnet-eastnet-vti-02
+002 "westnet-eastnet-vti-02": added IKEv2 connection
+west #
+ # remove the regular route for 192.0.2.0/24
+west #
+ ip route del 192.0.2.0/24
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec auto --up westnet-eastnet-vti-01
+1v2 "westnet-eastnet-vti-01" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-vti-01" #1: sent IKE_SA_INIT request
+1v2 "westnet-eastnet-vti-01" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+003 "westnet-eastnet-vti-01" #1: authenticated using RSA with SHA2_512 and preloaded certificate '@east'
+002 "westnet-eastnet-vti-01" #2: up-client output: net.ipv4.conf.ipsec0.disable_policy = 1
+002 "westnet-eastnet-vti-01" #2: up-client output: net.ipv4.conf.ipsec0.rp_filter = 0
+002 "westnet-eastnet-vti-01" #2: up-client output: net.ipv4.conf.ipsec0.forwarding = 1
+002 "westnet-eastnet-vti-01" #2: up-client output: done ip route
+002 "westnet-eastnet-vti-01" #2: prepare-client output: vti interface "ipsec0" already exists with conflicting setting
+002 "westnet-eastnet-vti-01" #2: prepare-client output: existing: ipsec0: ip/ip remote any local 192.1.2.45 ttl inherit ikey 20 okey 21
+002 "westnet-eastnet-vti-01" #2: prepare-client output: wanted  : ipsec0: ip/ip  remote any  local 192.1.2.45  ttl inherit  key 21
+002 "westnet-eastnet-vti-01" #2: route-client output: done ip route
+002 "westnet-eastnet-vti-01" #2: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "westnet-eastnet-vti-01" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE NATOA=none NATD=none DPD=passive}
+west #
+ ipsec auto --up westnet-eastnet-vti-02
+1v2 "westnet-eastnet-vti-02" #3: sent CREATE_CHILD_SA request for new IPsec SA
+002 "westnet-eastnet-vti-02" #3: up-client output: vti interface "ipsec0" already exists with conflicting setting
+002 "westnet-eastnet-vti-02" #3: up-client output: existing: ipsec0: ip/ip remote any local 192.1.2.45 ttl inherit ikey 20 okey 21
+002 "westnet-eastnet-vti-02" #3: up-client output: wanted  : ipsec0: ip/ip  remote any  local 192.1.2.45  ttl inherit  key 21
+002 "westnet-eastnet-vti-02" #3: up-client output: done ip route
+002 "westnet-eastnet-vti-02" #3: prepare-client output: vti interface "ipsec0" already exists with conflicting setting
+002 "westnet-eastnet-vti-02" #3: prepare-client output: existing: ipsec0: ip/ip remote any local 192.1.2.45 ttl inherit ikey 20 okey 21
+002 "westnet-eastnet-vti-02" #3: prepare-client output: wanted  : ipsec0: ip/ip  remote any  local 192.1.2.45  ttl inherit  key 21
+002 "westnet-eastnet-vti-02" #3: route-client output: RTNETLINK answers: File exists
+002 "westnet-eastnet-vti-02" #3: route-client output: done ip route
+002 "westnet-eastnet-vti-02" #3: negotiated connection [10.0.1.0-10.0.1.255:0-65535 0] -> [10.0.2.0-10.0.2.255:0-65535 0]
+004 "westnet-eastnet-vti-02" #3: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE-MODP2048 NATOA=none NATD=none DPD=passive}
+west #
+ ../../guestbin/ping-once.sh --up -I 192.0.1.254 192.0.2.254
+up
+west #
+ ping -n -q -c 4 -I 10.0.1.254 10.0.2.254
+ping: bind: Cannot assign requested address
+west #
+ ipsec whack --trafficstatus
+006 #2: "westnet-eastnet-vti-01", type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='@east'
+006 #3: "westnet-eastnet-vti-02", type=ESP, add_time=1234567890, inBytes=0, outBytes=0, id='@east'
+west #
+ echo done
+done
+west #
+ grep -v -P "\t0$" /proc/net/xfrm_stat
+west #
+ ip addr show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 state UNKNOWN
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP
+    link/ether 12:00:00:ab:cd:ff brd ff:ff:ff:ff:ff:ff
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP
+    link/ether 12:00:00:64:64:45 brd ff:ff:ff:ff:ff:ff
+    inet 192.1.2.45/24 scope global eth1
+       valid_lft forever preferred_lft forever
+4: ip_vti0@NONE: <NOARP> mtu XXXX qdisc noop state DOWN group default
+    link/ipip 0.0.0.0 brd 0.0.0.0
+X: ipsec0@NONE: <NOARP,UP,LOWER_UP> mtu 1480 state UNKNOWN
+    link/ipip 192.1.2.45 brd 0.0.0.0
+    inet 192.0.1.254/24 scope global ipsec0
+       valid_lft forever preferred_lft forever
+west #
+ ip link show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 state UNKNOWN
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default
+    link/ether 12:00:00:ab:cd:ff brd ff:ff:ff:ff:ff:ff
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default
+    link/ether 12:00:00:64:64:45 brd ff:ff:ff:ff:ff:ff
+4: ip_vti0@NONE: <NOARP> mtu XXXX qdisc state DOWN
+    link/ipip 0.0.0.0 brd 0.0.0.0
+X: ipsec0@NONE: <NOARP,UP,LOWER_UP> mtu 1480 state UNKNOWN
+    link/ipip 192.1.2.45 brd 0.0.0.0
+west #
+ ip route show
+default via 192.1.2.254 dev eth1
+10.0.2.0/24 dev ipsec0 scope link
+192.0.1.0/24 dev ipsec0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 dev ipsec0 scope link
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+192.1.2.254 dev eth1 scope link
+west #
+ ip xfrm state
+src 192.1.2.23 dst 192.1.2.45
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	aead rfc4106(gcm(aes)) 0xENCAUTHKEY 128
+src 192.1.2.45 dst 192.1.2.23
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	aead rfc4106(gcm(aes)) 0xENCAUTHKEY 128
+src 192.1.2.23 dst 192.1.2.45
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	aead rfc4106(gcm(aes)) 0xENCAUTHKEY 128
+src 192.1.2.45 dst 192.1.2.23
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	aead rfc4106(gcm(aes)) 0xENCAUTHKEY 128
+west #
+ ip xfrm policy
+src 10.0.1.0/24 dst 10.0.2.0/24 
+	dir out priority 2084814 ptype main 
+	mark 0x15/0xffffffff 
+	tmpl src 192.1.2.45 dst 192.1.2.23
+		proto esp reqid REQID mode tunnel
+src 10.0.2.0/24 dst 10.0.1.0/24 
+	dir fwd priority 2084814 ptype main 
+	mark 0x14/0xffffffff 
+	tmpl src 192.1.2.23 dst 192.1.2.45
+		proto esp reqid REQID mode tunnel
+src 10.0.2.0/24 dst 10.0.1.0/24 
+	dir in priority 2084814 ptype main 
+	mark 0x14/0xffffffff 
+	tmpl src 192.1.2.23 dst 192.1.2.45
+		proto esp reqid REQID mode tunnel
+src 192.0.1.0/24 dst 192.0.2.0/24 
+	dir out priority 2084814 ptype main 
+	mark 0x15/0xffffffff 
+	tmpl src 192.1.2.45 dst 192.1.2.23
+		proto esp reqid REQID mode tunnel
+src 192.0.2.0/24 dst 192.0.1.0/24 
+	dir fwd priority 2084814 ptype main 
+	mark 0x14/0xffffffff 
+	tmpl src 192.1.2.23 dst 192.1.2.45
+		proto esp reqid REQID mode tunnel
+src 192.0.2.0/24 dst 192.0.1.0/24 
+	dir in priority 2084814 ptype main 
+	mark 0x14/0xffffffff 
+	tmpl src 192.1.2.23 dst 192.1.2.45
+		proto esp reqid REQID mode tunnel
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket out priority 0 ptype main 
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket in priority 0 ptype main 
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket out priority 0 ptype main 
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket in priority 0 ptype main 
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket out priority 0 ptype main 
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket in priority 0 ptype main 
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket out priority 0 ptype main 
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket in priority 0 ptype main 
+west #
+ 

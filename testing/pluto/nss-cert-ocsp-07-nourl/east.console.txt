@@ -1,0 +1,46 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+east #
+ certutil -d sql:/etc/ipsec.d -D -n west
+east #
+ # replace nic with the nic-no url cert
+east #
+ certutil -d sql:/etc/ipsec.d -D -n nic
+east #
+ certutil -A -i /testing/x509/certs/nic-nourl.crt -d sql:/etc/ipsec.d -n nic -t "P,,"
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add nss-cert-ocsp
+002 "nss-cert-ocsp": added IKEv1 connection
+east #
+ ipsec whack --impair delete-on-retransmit
+east #
+ echo "initdone"
+initdone
+east #
+ # on east, revocation should show up
+east #
+ hostname | grep east && grep "certificate revoked" /tmp/pluto.log
+east
+"nss-cert-ocsp" #1: certificate revoked!
+east #
+ # should show a hit
+east #
+ hostname |grep east && grep ERROR /tmp/pluto.log
+east
+"nss-cert-ocsp" #1: NSS ERROR: Peer's Certificate has been revoked.
+east #
+ # should not show a hit
+east #
+ hostname |grep nic && journalctl /sbin/ocspd --no-pager | tail -n 20 |grep TRYLATER
+east #
+ ipsec stop
+Redirecting to: [initsystem]
+east #
+ ipsec status
+whack: Pluto is not running (no "/run/pluto/pluto.ctl")
+

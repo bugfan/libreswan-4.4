@@ -1,0 +1,15 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add rw-eastnet-pool-x509-ipv4
+002 "rw-eastnet-pool-x509-ipv4": added IKEv2 connection
+east #
+ echo "initdone"
+initdone
+east #
+ 

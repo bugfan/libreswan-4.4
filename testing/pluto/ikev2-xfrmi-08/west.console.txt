@@ -1,0 +1,113 @@
+/testing/guestbin/swan-prep
+west #
+ ip address del 192.0.1.254/24 dev eth0 >/dev/null
+west #
+ ip link set dev eth0 down 2>/dev/null
+west #
+ ip link set dev ipsec17 down 2>/dev/null
+west #
+ ip link delete ipsec17 2>/dev/null
+west #
+ ip route get to 192.0.2.254 | grep eth1 && ip route del 192.0.2.0/24 via 192.1.2.23 dev eth1
+192.0.2.254 via 192.1.2.23 dev eth1 src 192.1.2.45 uid 0
+west #
+ ip link add ipsec17 type xfrm if_id 17 dev eth1
+west #
+ ip -d link show dev ipsec17
+X: ipsec17@eth1: <NOARP> mtu 1500 qdisc state DOWN
+    xfrm if_id 0x11 addrgenmode eui64 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 
+west #
+ ip address add 192.0.1.254/24 dev ipsec17
+west #
+ ../../guestbin/ip-addr-show.sh
+eth1 inet 192.1.2.45/24
+ipsec17 inet 192.0.1.254/24
+west #
+ # ensure that clear text does not get through
+west #
+ iptables -A INPUT -i eth1 -s 192.0.2.0/24 -j DROP
+west #
+ iptables -I INPUT -m policy --dir in --pol ipsec -j ACCEPT
+west #
+ ../../guestbin/ping-once.sh --down -I 192.0.1.254 192.0.2.254
+down
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add west
+002 "west": added IKEv2 connection
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec auto --up west
+1v2 "west" #1: initiating IKEv2 connection
+1v2 "west" #1: sent IKE_SA_INIT request
+1v2 "west" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+003 "west" #1: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "west" #2: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "west" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE NATOA=none NATD=none DPD=passive}
+west #
+ ../../guestbin/ping-once.sh --up -I 192.0.1.254 192.0.2.254
+up
+west #
+ ip -s link show ipsec17
+X: ipsec17@eth1: <NOARP,UP,LOWER_UP> mtu 1500 state UNKNOWN
+    RX: bytes  packets  errors  dropped overrun mcast   
+    84         1        0       0       0       0       
+    TX: bytes  packets  errors  dropped carrier collsns 
+    84         1        0       0       0       0       
+west #
+ echo done
+done
+west #
+ ipsec whack --trafficstatus
+006 #2: "west", type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='@east'
+west #
+ ../../guestbin/ipsec-look.sh
+west NOW
+XFRM state:
+src 192.1.2.23 dst 192.1.2.45
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	output-mark 0x11
+	aead rfc4106(gcm(aes)) 0xENCAUTHKEY 128
+	if_id 0x11
+src 192.1.2.45 dst 192.1.2.23
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	output-mark 0x11
+	aead rfc4106(gcm(aes)) 0xENCAUTHKEY 128
+	if_id 0x11
+XFRM policy:
+src 192.0.1.0/24 dst 192.0.2.0/24
+	dir out priority 2084814 ptype main
+	tmpl src 192.1.2.45 dst 192.1.2.23
+		proto esp reqid REQID mode tunnel
+	if_id 0x11
+src 192.0.2.0/24 dst 192.0.1.0/24
+	dir fwd priority 2084814 ptype main
+	tmpl src 192.1.2.23 dst 192.1.2.45
+		proto esp reqid REQID mode tunnel
+	if_id 0x11
+src 192.0.2.0/24 dst 192.0.1.0/24
+	dir in priority 2084814 ptype main
+	tmpl src 192.1.2.23 dst 192.1.2.45
+		proto esp reqid REQID mode tunnel
+	if_id 0x11
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+default via 192.1.2.254 dev eth1
+192.0.1.0/24 dev ipsec17 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 dev ipsec17 scope link
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+west #
+ 

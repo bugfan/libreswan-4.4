@@ -1,0 +1,55 @@
+/testing/guestbin/swan-prep
+road #
+ cp policies/* /etc/ipsec.d/policies/
+road #
+ echo "192.1.2.0/24" >> /etc/ipsec.d/policies/private-or-clear
+road #
+ ipsec start
+Redirecting to: [initsystem]
+road #
+ ../../guestbin/wait-until-pluto-started
+road #
+ # give OE policies time to load
+road #
+ ../../guestbin/wait-for.sh --match 'loaded 10' -- ipsec auto --status
+000 Total IPsec connections: loaded 10, active 0
+road #
+ ipsec auto --add road-east-ikev2
+002 "road-east-ikev2": added IKEv2 connection
+road #
+ echo "initdone"
+initdone
+road #
+ ipsec auto --route road-east-ikev2
+road #
+ # hopefully trigger road-east-ikev2 - not the OE authnull conn
+road #
+ # The ping should also get a reply, proving the IPsec SA was
+road #
+ # preferred over the OE trap policy
+road #
+ ipsec whack --trafficstatus
+road #
+ ../../guestbin/ping-once.sh --forget -I 192.1.3.209 192.1.2.23
+fired and forgotten
+road #
+ ../../guestbin/wait-for.sh --match road-east-ikev2 -- ipsec whack --trafficstatus
+006 #2: "road-east-ikev2", type=ESP, add_time=1234567890, inBytes=0, outBytes=0, id='@east'
+road #
+ ../../guestbin/ping-once.sh --up -I 192.1.3.209 192.1.2.23
+up
+road #
+ echo done
+done
+road #
+ hostname | grep nic > /dev/null || ipsec whack --trafficstatus
+006 #2: "road-east-ikev2", type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='@east'
+road #
+ # this should show IKE and IPsec state for "road-east-ikev2" and not an OE group
+road #
+ ipsec status | grep road-east | sed 's/"road-east-ikev2".*/"road-east-ikev2" --- cut ---/' | grep "#"
+000 #1: "road-east-ikev2" --- cut ---
+000 #2: "road-east-ikev2" --- cut ---
+000 #2: "road-east-ikev2" --- cut ---
+road #
+ 

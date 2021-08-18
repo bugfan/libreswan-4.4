@@ -1,0 +1,5 @@
+Interop with strongswan using one connection and it REKEY IKE SA.
+
+West, strongswan, will initiate IKE. And later rekey the IKE SA leaving Child SA alone.
+IKE rekey use CREATE_CHILD_SA exchange.
+The libreswan is the responder for IKE Rekey RFC 7296 #1.3.2.

@@ -1,0 +1,2 @@
+ipsec readwriteconf
+echo done

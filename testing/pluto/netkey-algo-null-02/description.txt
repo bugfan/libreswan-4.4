@@ -1,0 +1,4 @@
+"westnet-eastnet": 192.0.1.0/24===192.1.2.45[@west]...192.1.2.23[@east]===192.0.2.0/24
+
+The policy has been adjusted to request NULL with SHA1 for  phase 2.
+

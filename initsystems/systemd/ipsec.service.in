@@ -1,0 +1,41 @@
+[Unit]
+Description=Internet Key Exchange (IKE) Protocol Daemon for IPsec
+Wants=network-online.target
+After=network-online.target
+Documentation=man:ipsec(8) man:pluto(8) man:ipsec.conf(5)
+
+[Service]
+Type=@SD_TYPE@
+Restart=@SD_RESTART_TYPE@
+# 12 is the shutdown while leaving kernel state. Restarting would still kill kernel state
+RestartPreventExitStatus=12
+
+#RestartPreventExitStatus=137 143 SIGTERM SIGKILL
+
+# Set WatchdogSec to the amount of time (in seconds) that systemd will wait
+# before restarting an unresponsive pluto.
+# EVENT_SD_WATCHDOG updates the heartbeat every 15 seconds, recommended values
+# are 60, 90, 120. WatchdogSec=0 disables the action
+NotifyAccess=all
+WatchdogSec=@SD_WATCHDOGSEC@
+
+# Check configuration file
+ExecStartPre=@FINALLIBEXECDIR@/addconn --config @FINALCONFFILE@ --checkconfig
+# Check for kernel modules
+ExecStartPre=@FINALLIBEXECDIR@/_stackmanager start
+# Check for nss database status and migration
+ExecStartPre=@FINALSBINDIR@/ipsec --checknss
+# Check for nflog setup
+ExecStartPre=@FINALSBINDIR@/ipsec --checknflog
+# Start the actual IKE daemon
+ExecStart=@FINALLIBEXECDIR@/pluto @SD_PLUTO_OPTIONS@ --config @FINALCONFFILE@ --nofork
+# Enable for portexcludes support
+# ExecStartPost=@FINALLIBEXECDIR@/portexcludes
+ExecStop=@FINALLIBEXECDIR@/whack --shutdown
+# 12 is the exit code of pluto for shutting down "leaving state"
+ExecStopPost=/bin/bash -c 'if test "$EXIT_STATUS" != "12"; then /sbin/ip xfrm policy flush; /sbin/ip xfrm state flush; fi'
+ExecStopPost=@FINALSBINDIR@/ipsec --stopnflog
+ExecReload=@FINALLIBEXECDIR@/whack --listen
+
+[Install]
+WantedBy=multi-user.target

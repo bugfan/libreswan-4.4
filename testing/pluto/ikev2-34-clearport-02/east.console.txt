@@ -1,0 +1,19 @@
+/testing/guestbin/swan-prep
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add west-east
+002 "west-east": added IKEv2 connection
+east #
+ ipsec auto --add pass-222
+002 "pass-222": added passthrough connection
+east #
+ ipsec auto --route pass-222
+east #
+ echo "initdone"
+initdone
+east #
+ 

@@ -1,0 +1,98 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+east #
+ ifconfig eth0:1 inet 192.0.2.244 netmask 255.255.255.0
+east #
+ ifconfig eth0:2 inet 192.0.2.234 netmask 255.255.255.0
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add TUNNEL-A
+002 "TUNNEL-A": added IKEv1 connection
+east #
+ ipsec auto --add TUNNEL-B
+002 "TUNNEL-B": added IKEv1 connection
+east #
+ ipsec auto --add TUNNEL-C
+002 "TUNNEL-C": added IKEv1 connection
+east #
+ echo "initdone"
+initdone
+east #
+ ../../guestbin/ipsec-look.sh
+east NOW
+XFRM state:
+src 192.1.2.45 dst 192.1.2.23
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	auth-trunc hmac(sha1) 0xHASHKEY 96
+	enc cbc(aes) 0xENCKEY
+src 192.1.2.23 dst 192.1.2.45
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	auth-trunc hmac(sha1) 0xHASHKEY 96
+	enc cbc(aes) 0xENCKEY
+src 192.1.2.45 dst 192.1.2.23
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	auth-trunc hmac(sha1) 0xHASHKEY 96
+	enc cbc(aes) 0xENCKEY
+src 192.1.2.23 dst 192.1.2.45
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	auth-trunc hmac(sha1) 0xHASHKEY 96
+	enc cbc(aes) 0xENCKEY
+XFRM policy:
+src 192.0.1.254/32 dst 192.0.2.234/32
+	dir fwd priority 2080702 ptype main
+	tmpl src 192.1.2.45 dst 192.1.2.23
+		proto esp reqid REQID mode tunnel
+src 192.0.1.254/32 dst 192.0.2.234/32
+	dir in priority 2080702 ptype main
+	tmpl src 192.1.2.45 dst 192.1.2.23
+		proto esp reqid REQID mode tunnel
+src 192.0.1.254/32 dst 192.0.2.254/32
+	dir fwd priority 2080702 ptype main
+	tmpl src 192.1.2.45 dst 192.1.2.23
+		proto esp reqid REQID mode tunnel
+src 192.0.1.254/32 dst 192.0.2.254/32
+	dir in priority 2080702 ptype main
+	tmpl src 192.1.2.45 dst 192.1.2.23
+		proto esp reqid REQID mode tunnel
+src 192.0.2.234/32 dst 192.0.1.254/32
+	dir out priority 2080702 ptype main
+	tmpl src 192.1.2.23 dst 192.1.2.45
+		proto esp reqid REQID mode tunnel
+src 192.0.2.244/32 dst 192.0.1.254/32
+	dir out priority 2080702 ptype main
+	tmpl src 0.0.0.0 dst 0.0.0.0
+		proto esp reqid REQID mode transport
+src 192.0.2.254/32 dst 192.0.1.254/32
+	dir out priority 2080702 ptype main
+	tmpl src 192.1.2.23 dst 192.1.2.45
+		proto esp reqid REQID mode tunnel
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+default via 192.1.2.254 dev eth1
+192.0.1.0/24 via 192.1.2.45 dev eth1
+192.0.1.254 dev eth1 scope link src 192.0.2.254
+192.0.2.0/24 dev eth0 proto kernel scope link src 192.0.2.254
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.23
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+Libreswan test CA for mainca - Libreswan                     CT,, 
+east                                                         u,u,u
+hashsha1                                                     P,,  
+nic                                                          P,,  
+north                                                        P,,  
+road                                                         P,,  
+west                                                         P,,  
+west-ec                                                      P,,  
+east #
+ 

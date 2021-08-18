@@ -1,0 +1,42 @@
+/testing/guestbin/swan-prep
+east #
+ ip addr add 192.0.200.254/24 dev eth0:1
+east #
+ ip addr add 192.0.201.254/24 dev eth0:1
+east #
+ ip addr add 192.0.210.254/24 dev eth0:1
+east #
+ ip addr add 192.0.211.254/24 dev eth0:1
+east #
+ ip route add 192.0.100.0/24 via 192.1.2.45  dev eth1
+east #
+ ip route add 192.0.101.0/24 via 192.1.2.45  dev eth1
+east #
+ ip route add 192.0.110.0/24 via 192.1.2.45  dev eth1
+east #
+ ip route add 192.0.111.0/24 via 192.1.2.45  dev eth1
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add westnet-eastnet-ikev2
+002 "westnet-eastnet-ikev2": added IKEv2 connection
+east #
+ ipsec auto --add westnet-eastnet-ikev2-00
+002 "westnet-eastnet-ikev2-00": added IKEv2 connection
+east #
+ ipsec auto --add westnet-eastnet-ikev2-01
+002 "westnet-eastnet-ikev2-01": added IKEv2 connection
+east #
+ ipsec auto --add westnet-eastnet-ikev2-10
+002 "westnet-eastnet-ikev2-10": added IKEv2 connection
+east #
+ ipsec auto --add westnet-eastnet-ikev2-11
+002 "westnet-eastnet-ikev2-11": added IKEv2 connection
+east #
+ echo "initdone"
+initdone
+east #
+ 

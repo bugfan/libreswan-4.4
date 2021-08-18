@@ -1,0 +1,32 @@
+/testing/guestbin/swan-prep --x509 --x509name notyetvalid
+Preparing X.509 files
+east #
+ certutil -d sql:/etc/ipsec.d -D -n west
+east #
+ ipsec _stackmanager start
+east #
+ mkdir -p /var/run/pluto
+east #
+ # Set a time in the future so notyetvalid and east certs are valid
+east #
+ # here.  Invoke pluto directly so that it is the root of the shared
+east #
+ # faketime tree.
+east #
+ LD_PRELOAD=PATH/lib64/faketime/libfaketime.so.1 FAKETIME=+370d ipsec pluto  --config /etc/ipsec.conf
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ # if faketime works, adding conn should not give a warning about cert
+east #
+ ipsec auto --add nss-cert
+002 "nss-cert": added IKEv1 connection
+east #
+ echo "initdone"
+initdone
+east #
+ # only expected to show failure on west
+east #
+ grep "ERROR" /tmp/pluto.log
+east #
+ 

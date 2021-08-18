@@ -1,0 +1,43 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+west #
+ certutil -D -n east -d sql:/etc/ipsec.d
+west #
+ pk12util -W foobar -K '' -d sql:/etc/ipsec.d -i /testing/x509/pkcs12/otherca/otherwest.p12
+pk12util: PKCS12 IMPORT SUCCESSFUL
+west #
+ ipsec checknss --settrusts
+correcting trust bits for Libreswan test CA for otherca - Libreswan
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec whack --impair suppress-retransmits
+west #
+ ipsec auto --add main
+002 "main": added IKEv2 connection
+west #
+ #ipsec auto --add other
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec auto --up main
+1v2 "main" #1: initiating IKEv2 connection
+1v2 "main" #1: sent IKE_SA_INIT request
+1v2 "main" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+003 "main" #1: authenticated using RSA with SHA2_512 and peer certificate 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org' issued by CA 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=Libreswan test CA for mainca, E=testing@libreswan.org'
+002 "main" #2: negotiated connection [192.1.2.45-192.1.2.45:0-65535 0] -> [192.1.2.23-192.1.2.23:0-65535 0]
+004 "main" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE NATOA=none NATD=none DPD=passive}
+west #
+ echo "done"
+done
+west #
+ # we should see conn other being up
+west #
+ ipsec whack --trafficstatus
+006 #2: "main", type=ESP, add_time=1234567890, inBytes=0, outBytes=0, id='C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org'
+west #
+ 

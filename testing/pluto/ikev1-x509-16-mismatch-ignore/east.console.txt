@@ -1,0 +1,17 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+east #
+ certutil -D -n west -d sql:/etc/ipsec.d
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add san
+002 "san": added IKEv1 connection
+east #
+ echo "initdone"
+initdone
+east #
+ 

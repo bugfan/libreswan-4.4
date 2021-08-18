@@ -1,0 +1,44 @@
+/testing/guestbin/swan-prep --x509 --x509name notyetvalid
+Preparing X.509 files
+west #
+ certutil -d sql:/etc/ipsec.d -D -n east
+west #
+ ipsec _stackmanager start
+west #
+ mkdir -p /var/run/pluto
+west #
+ # Set a time in the future so notyetvalid and east certs are valid
+west #
+ # here.  Invoke pluto directly so that it is the root of the shared
+west #
+ # faketime tree.
+west #
+ LD_PRELOAD=PATH/lib64/faketime/libfaketime.so.1 FAKETIME=+370d ipsec pluto  --config /etc/ipsec.conf
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ # if faketime works, adding conn should not give a warning about cert
+west #
+ ipsec auto --add nss-cert
+002 "nss-cert": added IKEv2 connection
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec whack --impair suppress-retransmits
+west #
+ ipsec auto --up nss-cert
+1v2 "nss-cert" #1: initiating IKEv2 connection
+1v2 "nss-cert" #1: sent IKE_SA_INIT request
+1v2 "nss-cert" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+002 "nss-cert" #1: IKE SA authentication request rejected by peer: AUTHENTICATION_FAILED
+000 "nss-cert" #2: scheduling retry attempt 1 of an unlimited number, but releasing whack
+west #
+ echo done
+done
+west #
+ # will only show up on east - note "expired" is wrong and should be "not yet valid"
+west #
+ grep "ERROR" /tmp/pluto.log
+west #
+ 

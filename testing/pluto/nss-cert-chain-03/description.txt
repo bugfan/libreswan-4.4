@@ -1,0 +1,4 @@
+east and west only send their end and issuer using send_ca=issuer
+
+connection expected to establish 
+if send_ca=issuer stops working, the connection will fail.

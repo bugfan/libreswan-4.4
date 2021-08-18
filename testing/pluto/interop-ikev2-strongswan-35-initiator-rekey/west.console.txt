@@ -1,0 +1,100 @@
+/testing/guestbin/swan-prep
+west #
+ ../../guestbin/wait-until-alive -I 192.0.1.254 192.0.2.254
+destination -I 192.0.1.254 192.0.2.254 is alive
+west #
+ # confirm that the network is alive
+west #
+ ../../guestbin/wait-until-alive -I 192.0.1.254 192.0.2.254
+destination -I 192.0.1.254 192.0.2.254 is alive
+west #
+ # ensure that clear text does not get through
+west #
+ iptables -A INPUT -i eth1 -s 192.0.2.0/24 -j DROP
+west #
+ iptables -I INPUT -m policy --dir in --pol ipsec -j ACCEPT
+west #
+ # confirm clear text does not get through
+west #
+ ../../guestbin/ping-once.sh --down -I 192.0.1.254 192.0.2.254
+down
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec whack --impair revival
+west #
+ ipsec auto --add westnet-eastnet
+002 "westnet-eastnet": added IKEv2 connection
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec auto --up westnet-eastnet
+1v2 "westnet-eastnet" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet" #1: sent IKE_SA_INIT request
+1v2 "westnet-eastnet" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_CBC_256 integ=HMAC_SHA2_512_256 prf=HMAC_SHA2_512 group=MODP2048}
+003 "westnet-eastnet" #1: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "westnet-eastnet" #2: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "westnet-eastnet" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_512_256 NATOA=none NATD=none DPD=passive}
+west #
+ ../../guestbin/ping-once.sh --up -I 192.0.1.254 192.0.2.254
+up
+west #
+ ipsec trafficstatus
+006 #2: "westnet-eastnet", type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='@east'
+west #
+ # does not work on 3.29 for now leave it timer based rekey
+west #
+ ipsec whack --rekey-ipsec --name westnet-eastnet
+1v2 "westnet-eastnet" #3: sent CREATE_CHILD_SA request to rekey IPsec SA
+002 "westnet-eastnet" #3: rekeyed #2 STATE_V2_REKEY_CHILD_I1 and expire it remaining life XXs
+002 "westnet-eastnet" #3: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "westnet-eastnet" #3: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_512_256-MODP2048 NATOA=none NATD=none DPD=passive}
+002 "westnet-eastnet" #2: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "westnet-eastnet" #2: ESP traffic information: in=84B out=84B
+west #
+ sleep 15
+west #
+ ../../guestbin/ping-once.sh --up -I 192.0.1.254 192.0.2.254
+up
+west #
+ # only #3 should be there with traffic
+west #
+ ipsec trafficstatus
+006 #3: "westnet-eastnet", type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='@east'
+west #
+ ipsec status | grep westnet-eastnet
+000 "westnet-eastnet": 192.0.1.0/24===192.1.2.45<192.1.2.45>[@west]...192.1.2.23<192.1.2.23>[@east]===192.0.2.0/24; erouted; eroute owner: #3
+000 "westnet-eastnet":     oriented; my_ip=unset; their_ip=unset; my_updown=ipsec _updown;
+000 "westnet-eastnet":   xauth us:none, xauth them:none,  my_username=[any]; their_username=[any]
+000 "westnet-eastnet":   our auth:secret, their auth:secret
+000 "westnet-eastnet":   modecfg info: us:none, them:none, modecfg policy:push, dns:unset, domains:unset, cat:unset;
+000 "westnet-eastnet":   sec_label:unset;
+000 "westnet-eastnet":   ike_life: 28800s; ipsec_life: 28800s; replay_window: 32; rekey_margin: 540s; rekey_fuzz: 0%; keyingtries: 0;
+000 "westnet-eastnet":   retransmit-interval: 9999ms; retransmit-timeout: 99s; iketcp:no; iketcp-port:4500;
+000 "westnet-eastnet":   initial-contact:no; cisco-unity:no; fake-strongswan:no; send-vendorid:no; send-no-esp-tfc:no;
+000 "westnet-eastnet":   policy: IKEv2+PSK+ENCRYPT+TUNNEL+PFS+UP+IKE_FRAG_ALLOW+ESN_NO;
+000 "westnet-eastnet":   v2-auth-hash-policy: none;
+000 "westnet-eastnet":   conn_prio: 24,24; interface: eth1; metric: 0; mtu: unset; sa_prio:auto; sa_tfc:none;
+000 "westnet-eastnet":   nflog-group: unset; mark: unset; vti-iface:unset; vti-routing:no; vti-shared:no; nic-offload:auto;
+000 "westnet-eastnet":   our idtype: ID_FQDN; our id=@west; their idtype: ID_FQDN; their id=@east
+000 "westnet-eastnet":   dpd: action:hold; delay:0; timeout:0; nat-t: encaps:auto; nat_keepalive:yes; ikev1_natt:both
+000 "westnet-eastnet":   newest ISAKMP SA: #1; newest IPsec SA: #3; conn serial: $1;
+000 "westnet-eastnet":   IKE algorithms: AES_CBC_256-HMAC_SHA2_512-MODP2048
+000 "westnet-eastnet":   IKEv2 algorithm newest: AES_CBC_256-HMAC_SHA2_512-MODP2048
+000 "westnet-eastnet":   ESP algorithms: AES_CBC_256-HMAC_SHA2_512_256-MODP2048
+000 "westnet-eastnet":   ESP algorithm newest: AES_CBC_256-HMAC_SHA2_512_256; pfsgroup=<Phase1>
+000 #1: "westnet-eastnet":500 STATE_V2_ESTABLISHED_IKE_SA (established IKE SA); EVENT_SA_REKEY in XXs; newest ISAKMP; idle;
+000 #3: "westnet-eastnet":500 STATE_V2_ESTABLISHED_CHILD_SA (IPsec SA established); EVENT_SA_REKEY in XXs; newest IPSEC; eroute owner; isakmp#1; idle;
+000 #3: "westnet-eastnet" esp.ESPSPIi@192.1.2.23 esp.ESPSPIi@192.1.2.45 tun.0@192.1.2.23 tun.0@192.1.2.45 Traffic: ESPin=84B ESPout=84B! ESPmax=0B 
+west #
+ # give time to strongswan to expire old one
+west #
+ sleep 53
+west #
+ if [ -f /var/run/charon.pid -o -f /var/run/strongswan/charon.pid ]; then strongswan status ; fi
+west #
+ 

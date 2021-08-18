@@ -1,0 +1,202 @@
+/testing/guestbin/swan-prep
+west #
+ # confirm that the network is alive
+west #
+ ../../guestbin/wait-until-alive -I 192.0.1.254 192.0.2.254
+destination -I 192.0.1.254 192.0.2.254 is alive
+west #
+ # ensure that clear text does not get through
+west #
+ iptables -A INPUT -i eth1 -s 192.0.2.0/24 -j DROP
+west #
+ iptables -I INPUT -m policy --dir in --pol ipsec -j ACCEPT
+west #
+ # confirm clear text does not get through
+west #
+ ../../guestbin/ping-once.sh --down -I 192.0.1.254 192.0.2.254
+down
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec whack --impair suppress-retransmits
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec whack --impair suppress-retransmits --debug crypt,crypt-low
+west #
+ ../../guestbin/libreswan-up-down.sh ike=chacha20poly1305-sha2-dh19 -I 192.0.1.254 192.0.2.254
+002 "ike=chacha20poly1305-sha2-dh19": added IKEv2 connection
+1v2 "ike=chacha20poly1305-sha2-dh19" #1: initiating IKEv2 connection
+1v2 "ike=chacha20poly1305-sha2-dh19" #1: sent IKE_SA_INIT request
+1v2 "ike=chacha20poly1305-sha2-dh19" #1: sent IKE_AUTH request {auth=IKEv2 cipher=CHACHA20_POLY1305_256 integ=n/a prf=HMAC_SHA2_256 group=DH19}
+003 "ike=chacha20poly1305-sha2-dh19" #1: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "ike=chacha20poly1305-sha2-dh19" #2: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "ike=chacha20poly1305-sha2-dh19" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_256_128 NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "ike=chacha20poly1305-sha2-dh19": terminating SAs using this connection
+002 "ike=chacha20poly1305-sha2-dh19" #2: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "ike=chacha20poly1305-sha2-dh19" #2: ESP traffic information: in=84B out=84B
+002 "ike=chacha20poly1305-sha2-dh19" #1: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "ike=chacha20poly1305-sha2-dh19": terminating SAs using this connection
+west #
+ ../../guestbin/libreswan-up-down.sh ike=aes128-sha2-dh19 -I 192.0.1.254 192.0.2.254
+002 "ike=aes128-sha2-dh19": added IKEv2 connection
+1v2 "ike=aes128-sha2-dh19" #3: initiating IKEv2 connection
+1v2 "ike=aes128-sha2-dh19" #3: sent IKE_SA_INIT request
+1v2 "ike=aes128-sha2-dh19" #3: sent IKE_AUTH request {auth=IKEv2 cipher=AES_CBC_128 integ=HMAC_SHA2_256_128 prf=HMAC_SHA2_256 group=DH19}
+003 "ike=aes128-sha2-dh19" #3: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "ike=aes128-sha2-dh19" #4: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "ike=aes128-sha2-dh19" #4: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_256_128 NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "ike=aes128-sha2-dh19": terminating SAs using this connection
+002 "ike=aes128-sha2-dh19" #4: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "ike=aes128-sha2-dh19" #4: ESP traffic information: in=84B out=84B
+002 "ike=aes128-sha2-dh19" #3: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "ike=aes128-sha2-dh19": terminating SAs using this connection
+west #
+ ../../guestbin/libreswan-up-down.sh ike=aes128-sha2-dh20 -I 192.0.1.254 192.0.2.254
+002 "ike=aes128-sha2-dh20": added IKEv2 connection
+1v2 "ike=aes128-sha2-dh20" #5: initiating IKEv2 connection
+1v2 "ike=aes128-sha2-dh20" #5: sent IKE_SA_INIT request
+1v2 "ike=aes128-sha2-dh20" #5: sent IKE_AUTH request {auth=IKEv2 cipher=AES_CBC_128 integ=HMAC_SHA2_256_128 prf=HMAC_SHA2_256 group=DH20}
+003 "ike=aes128-sha2-dh20" #5: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "ike=aes128-sha2-dh20" #6: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "ike=aes128-sha2-dh20" #6: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_256_128 NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "ike=aes128-sha2-dh20": terminating SAs using this connection
+002 "ike=aes128-sha2-dh20" #6: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "ike=aes128-sha2-dh20" #6: ESP traffic information: in=84B out=84B
+002 "ike=aes128-sha2-dh20" #5: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "ike=aes128-sha2-dh20": terminating SAs using this connection
+west #
+ ../../guestbin/libreswan-up-down.sh ike=aes128-sha2-dh21 -I 192.0.1.254 192.0.2.254
+002 "ike=aes128-sha2-dh21": added IKEv2 connection
+1v2 "ike=aes128-sha2-dh21" #7: initiating IKEv2 connection
+1v2 "ike=aes128-sha2-dh21" #7: sent IKE_SA_INIT request
+1v2 "ike=aes128-sha2-dh21" #7: sent IKE_AUTH request {auth=IKEv2 cipher=AES_CBC_128 integ=HMAC_SHA2_256_128 prf=HMAC_SHA2_256 group=DH21}
+003 "ike=aes128-sha2-dh21" #7: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "ike=aes128-sha2-dh21" #8: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "ike=aes128-sha2-dh21" #8: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_256_128 NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "ike=aes128-sha2-dh21": terminating SAs using this connection
+002 "ike=aes128-sha2-dh21" #8: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "ike=aes128-sha2-dh21" #8: ESP traffic information: in=84B out=84B
+002 "ike=aes128-sha2-dh21" #7: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "ike=aes128-sha2-dh21": terminating SAs using this connection
+west #
+ ../../guestbin/libreswan-up-down.sh ike=aes128-sha1-dh19 -I 192.0.1.254 192.0.2.254
+002 "ike=aes128-sha1-dh19": added IKEv2 connection
+1v2 "ike=aes128-sha1-dh19" #9: initiating IKEv2 connection
+1v2 "ike=aes128-sha1-dh19" #9: sent IKE_SA_INIT request
+1v2 "ike=aes128-sha1-dh19" #9: sent IKE_AUTH request {auth=IKEv2 cipher=AES_CBC_128 integ=HMAC_SHA1_96 prf=HMAC_SHA1 group=DH19}
+003 "ike=aes128-sha1-dh19" #9: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "ike=aes128-sha1-dh19" #10: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "ike=aes128-sha1-dh19" #10: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_256_128 NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "ike=aes128-sha1-dh19": terminating SAs using this connection
+002 "ike=aes128-sha1-dh19" #10: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "ike=aes128-sha1-dh19" #10: ESP traffic information: in=84B out=84B
+002 "ike=aes128-sha1-dh19" #9: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "ike=aes128-sha1-dh19": terminating SAs using this connection
+west #
+ ../../guestbin/libreswan-up-down.sh ike=aes128-sha1-dh20 -I 192.0.1.254 192.0.2.254
+002 "ike=aes128-sha1-dh20": added IKEv2 connection
+1v2 "ike=aes128-sha1-dh20" #11: initiating IKEv2 connection
+1v2 "ike=aes128-sha1-dh20" #11: sent IKE_SA_INIT request
+1v2 "ike=aes128-sha1-dh20" #11: sent IKE_AUTH request {auth=IKEv2 cipher=AES_CBC_128 integ=HMAC_SHA1_96 prf=HMAC_SHA1 group=DH20}
+003 "ike=aes128-sha1-dh20" #11: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "ike=aes128-sha1-dh20" #12: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "ike=aes128-sha1-dh20" #12: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_256_128 NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "ike=aes128-sha1-dh20": terminating SAs using this connection
+002 "ike=aes128-sha1-dh20" #12: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "ike=aes128-sha1-dh20" #12: ESP traffic information: in=84B out=84B
+002 "ike=aes128-sha1-dh20" #11: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "ike=aes128-sha1-dh20": terminating SAs using this connection
+west #
+ ../../guestbin/libreswan-up-down.sh ike=aes128-sha1-dh21 -I 192.0.1.254 192.0.2.254
+002 "ike=aes128-sha1-dh21": added IKEv2 connection
+1v2 "ike=aes128-sha1-dh21" #13: initiating IKEv2 connection
+1v2 "ike=aes128-sha1-dh21" #13: sent IKE_SA_INIT request
+1v2 "ike=aes128-sha1-dh21" #13: sent IKE_AUTH request {auth=IKEv2 cipher=AES_CBC_128 integ=HMAC_SHA1_96 prf=HMAC_SHA1 group=DH21}
+003 "ike=aes128-sha1-dh21" #13: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "ike=aes128-sha1-dh21" #14: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "ike=aes128-sha1-dh21" #14: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_256_128 NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "ike=aes128-sha1-dh21": terminating SAs using this connection
+002 "ike=aes128-sha1-dh21" #14: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "ike=aes128-sha1-dh21" #14: ESP traffic information: in=84B out=84B
+002 "ike=aes128-sha1-dh21" #13: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "ike=aes128-sha1-dh21": terminating SAs using this connection
+west #
+ ../../guestbin/libreswan-up-down.sh ike=aes_ctr128-sha1-dh21 -I 192.0.1.254 192.0.2.254
+002 "ike=aes_ctr128-sha1-dh21": added IKEv2 connection
+1v2 "ike=aes_ctr128-sha1-dh21" #15: initiating IKEv2 connection
+1v2 "ike=aes_ctr128-sha1-dh21" #15: sent IKE_SA_INIT request
+1v2 "ike=aes_ctr128-sha1-dh21" #15: sent IKE_AUTH request {auth=IKEv2 cipher=AES_CTR_128 integ=HMAC_SHA1_96 prf=HMAC_SHA1 group=DH21}
+003 "ike=aes_ctr128-sha1-dh21" #15: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "ike=aes_ctr128-sha1-dh21" #16: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "ike=aes_ctr128-sha1-dh21" #16: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_256_128 NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "ike=aes_ctr128-sha1-dh21": terminating SAs using this connection
+002 "ike=aes_ctr128-sha1-dh21" #16: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "ike=aes_ctr128-sha1-dh21" #16: ESP traffic information: in=84B out=84B
+002 "ike=aes_ctr128-sha1-dh21" #15: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "ike=aes_ctr128-sha1-dh21": terminating SAs using this connection
+west #
+ ../../guestbin/libreswan-up-down.sh ike=3des-sha2-modp2048 -I 192.0.1.254 192.0.2.254
+002 "ike=3des-sha2-modp2048": added IKEv2 connection
+1v2 "ike=3des-sha2-modp2048" #17: initiating IKEv2 connection
+1v2 "ike=3des-sha2-modp2048" #17: sent IKE_SA_INIT request
+1v2 "ike=3des-sha2-modp2048" #17: sent IKE_AUTH request {auth=IKEv2 cipher=3DES_CBC_192 integ=HMAC_SHA2_256_128 prf=HMAC_SHA2_256 group=MODP2048}
+003 "ike=3des-sha2-modp2048" #17: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "ike=3des-sha2-modp2048" #18: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "ike=3des-sha2-modp2048" #18: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_256_128 NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "ike=3des-sha2-modp2048": terminating SAs using this connection
+002 "ike=3des-sha2-modp2048" #18: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "ike=3des-sha2-modp2048" #18: ESP traffic information: in=84B out=84B
+002 "ike=3des-sha2-modp2048" #17: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "ike=3des-sha2-modp2048": terminating SAs using this connection
+west #
+ ../../guestbin/libreswan-up-down.sh ike=aes128-aes_xcbc-modp2048 -I 192.0.1.254 192.0.2.254
+002 "ike=aes128-aes_xcbc-modp2048": added IKEv2 connection
+1v2 "ike=aes128-aes_xcbc-modp2048" #19: initiating IKEv2 connection
+1v2 "ike=aes128-aes_xcbc-modp2048" #19: sent IKE_SA_INIT request
+1v2 "ike=aes128-aes_xcbc-modp2048" #19: sent IKE_AUTH request {auth=IKEv2 cipher=AES_CBC_128 integ=AES_XCBC_96 prf=AES_XCBC group=MODP2048}
+003 "ike=aes128-aes_xcbc-modp2048" #19: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "ike=aes128-aes_xcbc-modp2048" #20: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "ike=aes128-aes_xcbc-modp2048" #20: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_256-HMAC_SHA2_256_128 NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "ike=aes128-aes_xcbc-modp2048": terminating SAs using this connection
+002 "ike=aes128-aes_xcbc-modp2048" #20: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "ike=aes128-aes_xcbc-modp2048" #20: ESP traffic information: in=84B out=84B
+002 "ike=aes128-aes_xcbc-modp2048" #19: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "ike=aes128-aes_xcbc-modp2048": terminating SAs using this connection
+west #
+ echo done
+done
+west #
+ if [ -f /var/run/pluto/pluto.pid ]; then ../../guestbin/ipsec-look.sh ; fi
+west NOW
+XFRM state:
+XFRM policy:
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+default via 192.1.2.254 dev eth1
+192.0.1.0/24 dev eth0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 via 192.1.2.23 dev eth1
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+west #
+ if [ -f /var/run/charon.pid -o -f /var/run/strongswan/charon.pid ]; then strongswan statusall ; fi
+west #
+ 

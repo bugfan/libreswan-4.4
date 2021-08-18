@@ -1,0 +1,112 @@
+/testing/guestbin/swan-prep
+west #
+ # confirm that the network is alive
+west #
+ ../../guestbin/wait-until-alive -I 192.0.1.254 192.0.2.254
+destination -I 192.0.1.254 192.0.2.254 is alive
+west #
+ # ensure that clear text does not get through or go out
+west #
+ iptables -A INPUT -i eth1 -s 192.0.2.0/24 -j DROP
+west #
+ iptables -I INPUT -m policy --dir in --pol ipsec -j ACCEPT
+west #
+ iptables -A OUTPUT -o eth1 -p icmp -j DROP
+west #
+ iptables -I OUTPUT -m policy --dir out --pol ipsec -j ACCEPT
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-eastnet-ikev2
+002 "westnet-eastnet-ikev2": added IKEv2 connection
+west #
+ echo "initdone"
+initdone
+west #
+ #!/bin/sh
+west #
+ ipsec auto --up westnet-eastnet-ikev2
+1v2 "westnet-eastnet-ikev2"[1] 192.1.2.23 #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-ikev2"[1] 192.1.2.23 #1: sent IKE_SA_INIT request
+1v2 "westnet-eastnet-ikev2"[1] 192.1.2.23 #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+003 "westnet-eastnet-ikev2"[1] 192.1.2.23 #1: authenticated using RSA with SHA2_512 and preloaded certificate '@east'
+002 "westnet-eastnet-ikev2"[1] 192.1.2.23 #2: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "westnet-eastnet-ikev2"[1] 192.1.2.23 #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE NATOA=none NATD=none DPD=active}
+west #
+ ping -n -q -c 4 -I 192.0.1.254 192.0.2.254
+PING 192.0.2.254 (192.0.2.254) from 192.0.1.254 : 56(84) bytes of data.
+--- 192.0.2.254 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time XXXX
+rtt min/avg/max/mdev = 0.XXX/0.XXX/0.XXX/0.XXX ms
+west #
+ # Tunnel should be up
+west #
+ ipsec whack --trafficstatus
+006 #2: "westnet-eastnet-ikev2"[1] 192.1.2.23, type=ESP, add_time=1234567890, inBytes=336, outBytes=336, id='@east'
+west #
+ # Let R_U_THERE packets flow
+west #
+ sleep 15
+west #
+ # Setting up block via iptables
+west #
+ iptables -I INPUT -s 192.1.2.23/32 -d 0/0 -j DROP
+west #
+ iptables -I OUTPUT -d 192.1.2.23/32 -s 0/0 -j DROP
+west #
+ sleep 30
+west #
+ # DPD should have triggered now
+west #
+ # Tunnel should be down with %trap or %hold preventing packet leaks
+west #
+ # But shuntstatus only shows bare shunts, not connection shunts :(
+west #
+ ipsec whack --trafficstatus
+west #
+ ipsec whack --shuntstatus
+000 Bare Shunt list:
+000  
+west #
+ # packets should be caught in firewall and no icmp replies should happen
+west #
+ ping -n -q -w 2 -c 3 -I 192.0.1.254 192.0.2.254
+PING 192.0.2.254 (192.0.2.254) from 192.0.1.254 : 56(84) bytes of data.
+--- 192.0.2.254 ping statistics ---
+2 packets transmitted, 0 received, 100% packet loss, time XXXX
+west #
+ # Remove the Blockage
+west #
+ iptables -D INPUT -s 192.1.2.23/32 -d 0/0 -j DROP
+west #
+ iptables -D OUTPUT -d 192.1.2.23/32 -s 0/0 -j DROP
+west #
+ # trigger traffic
+west #
+ ping -n -q -W 1 -w 1 -c 1 -I 192.0.1.254 192.0.2.254
+PING 192.0.2.254 (192.0.2.254) from 192.0.1.254 : 56(84) bytes of data.
+--- 192.0.2.254 ping statistics ---
+1 packets transmitted, 0 received, 100% packet loss, time XXXX
+west #
+ sleep 2
+west #
+ ping -n -q -W 1 -w 4 -c 4 -I 192.0.1.254 192.0.2.254
+PING 192.0.2.254 (192.0.2.254) from 192.0.1.254 : 56(84) bytes of data.
+--- 192.0.2.254 ping statistics ---
+4 packets transmitted, 0 received, 100% packet loss, time XXXX
+west #
+ # Tunnel should be back up now even without triggering traffic
+west #
+ echo done
+done
+west #
+ ipsec whack --trafficstatus
+west #
+ ipsec whack --shuntstatus
+000 Bare Shunt list:
+000  
+west #
+ 

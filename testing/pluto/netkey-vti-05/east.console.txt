@@ -1,0 +1,24 @@
+/testing/guestbin/swan-prep
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add westnet-eastnet-vti
+002 "westnet-eastnet-vti": added IKEv1 connection
+east #
+ echo "initdone"
+initdone
+east #
+ grep -v -P "\t0$" /proc/net/xfrm_stat
+east #
+ ipsec whack --shutdown
+east #
+ # there should be no vti0 device left
+east #
+ ip tun | sort
+ip_vti0: ip/ip remote any local any ttl inherit nopmtudisc key 0
+vti0: ip/ip remote 192.1.2.45 local 192.1.2.23 ttl inherit key 20
+east #
+ 

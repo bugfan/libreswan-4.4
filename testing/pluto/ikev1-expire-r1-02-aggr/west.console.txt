@@ -1,0 +1,44 @@
+/testing/guestbin/swan-prep
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-eastnet-aggr
+002 "westnet-eastnet-aggr": added IKEv1 connection
+west #
+ echo "initdone"
+initdone
+west #
+ # create a partial state on east, don't hold the hack for retransmit
+west #
+ ipsec whack --impair drop-i2
+west #
+ ipsec whack --impair delete-on-retransmit
+west #
+ ipsec whack --impair revival
+west #
+ ipsec auto --up westnet-eastnet-aggr
+002 "westnet-eastnet-aggr" #1: initiating IKEv1 Aggressive Mode connection
+1v1 "westnet-eastnet-aggr" #1: sent Aggressive Mode request
+002 "westnet-eastnet-aggr" #1: IMPAIR: retransmit so deleting SA
+002 "westnet-eastnet-aggr" #1: deleting state (STATE_AGGR_I1) and NOT sending notification
+002 "westnet-eastnet-aggr" #1: IMPAIR: skipping revival of connection that is supposed to remain up
+west #
+ # we are waiting for east to expire the partial IKE state in 1+1+2+4+8+16+32 secs
+west #
+ sleep 30
+west #
+ sleep 30
+west #
+ sleep 10
+west #
+ echo done
+done
+west #
+ # on east, we should see no more partial state
+west #
+ ipsec status | grep STATE_
+west #
+ 

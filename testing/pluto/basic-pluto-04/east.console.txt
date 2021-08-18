@@ -1,0 +1,6 @@
+# east is not used
+east #
+ echo done
+done
+east #
+ 

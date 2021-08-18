@@ -1,0 +1,58 @@
+#!/bin/sh
+
+
+if [ ! -f Makefile.ver ]
+then
+	echo >&2 "error: make release should be run from the top directory"
+	exit 1
+fi
+if [ -z "$VERSION" ]
+then
+	VERSION=`git describe --tags --dirty | tail -1| sed -e "s/v//"`
+fi
+
+if [ -z "$FORCE" ]
+then
+	if [ -n "`git diff | head -10`" ]
+	then
+		echo >&2 "error: tree is not clean - changes would be lost. aborted"
+		exit 1
+	fi
+
+	# will become branch 'release' instead of master
+	TOPUSH=`git log master ^origin/master`
+	if [ -n "$TOPUSH" ]
+	then
+		echo >&2 "ERROR: unpushed changes - git push first"
+		git log master ^origin/master
+		exit 1
+	fi
+fi
+
+if [ -f release/libreswan-$VERSION.tar.gz  ]
+then
+	echo >&2 "ERROR: release already exists. Aborted"
+	exit 1
+else
+	mkdir -p release
+fi
+
+git archive --format=tar --prefix=libreswan-$VERSION/ HEAD | gzip > release/libreswan-$VERSION.tar.gz
+
+# subshell for easier path
+(
+	cd release
+	tar zxf libreswan-$VERSION.tar.gz
+	cd libreswan-$VERSION
+	echo "IPSECBASEVERSION?=$VERSION" > mk/version.mk
+	sed -i "s/(unreleased)/(`C= LOCALE= LANG= date +"%B %d, %Y"`)/" CHANGES
+	for file in `find packaging -type f | xargs grep IPSECBASEVERSION |sed "s/:.*$//"`
+	do
+		sed -i "s/@IPSECBASEVERSION@/$VERSION/" $file
+	done
+	cd ..
+	tar zcf libreswan-$VERSION.tar.gz libreswan-$VERSION
+)
+ls -l release/libreswan-$VERSION.tar.gz
+echo please sign the release now with GPG and upload it
+

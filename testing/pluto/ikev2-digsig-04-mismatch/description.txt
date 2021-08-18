@@ -1,0 +1,2 @@
+RSA-SHA2 vs RSA-SHA1 strict, it should fail
+

@@ -1,0 +1,6 @@
+Test to see conn %default does not get ignored after another conn
+sets values.
+
+broken in 3.27, fixed in 3.28 with commit a08a47c4
+
+This test is extended with a little %fromcert testing as well

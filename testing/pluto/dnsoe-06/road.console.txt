@@ -1,0 +1,81 @@
+/testing/guestbin/swan-prep
+road #
+ cp road-ikev2-oe.conf /etc/ipsec.d/ikev2-oe.conf
+road #
+ cp policies/* /etc/ipsec.d/policies/
+road #
+ echo "192.1.2.0/24"  >> /etc/ipsec.d/policies/private-or-clear
+road #
+ ipsec start
+Redirecting to: [initsystem]
+road #
+ ../../guestbin/wait-until-pluto-started
+road #
+ #ipsec whack --impair suppress-retransmits
+road #
+ # ensure for tests acquires expire before our failureshunt=2m
+road #
+ echo 30 > /proc/sys/net/core/xfrm_acq_expires
+road #
+ # give OE policies time to load
+road #
+ ../../guestbin/wait-for.sh --match 'loaded 6' -- ipsec auto --status
+000 Total IPsec connections: loaded 6, active 0
+road #
+ ipsec whack --listpubkeys
+000  
+000 List of Public Keys:
+000  
+road #
+ echo "initdone"
+initdone
+road #
+ # Expected to fail as all IPSECKEY's are wrong
+road #
+ ipsec whack --oppohere 192.1.3.209 --oppothere 192.1.2.67
+002 initiate on demand from 192.1.3.209:8 to 192.1.2.67:0 proto=1 because: whack
+002 can't find expected bare shunt to delete: 192.1.3.209/32:0 -ICMP-> 192.1.2.67/32:0
+1v2 "private-or-clear#192.1.2.0/24"[1] ...192.1.2.67 #1: initiating IKEv2 connection
+003 "private-or-clear#192.1.2.0/24"[1] ...192.1.2.67 #1: authentication failed: using RSA with SHA2_512 for '192.1.2.67' tried preloaded: *AQBBBBBBB *AQAAAAAAA
+036 "private-or-clear#192.1.2.0/24"[1] ...192.1.2.67 #2: encountered fatal error in state STATE_PARENT_I2
+road #
+ grep "DNS QUESTION" /tmp/pluto.log
+| DNS QUESTION 67.2.1.192.IN-ADDR.ARPA.\tIN\tIPSECKEY\n
+road #
+ # should show large set of keys in pluto cache from IPSECKEY records
+road #
+ ipsec whack --listpubkeys
+000  
+000 List of Public Keys:
+000  
+000 TIMESTAMP, 2192 RSA Key AQBBBBBBB (no private key), until TIMESTAMP warning (expires in X days)
+000        ID_IPV4_ADDR '192.1.2.67'
+000 TIMESTAMP, 2192 RSA Key AQAAAAAAA (no private key), until TIMESTAMP warning (expires in X days)
+000        ID_IPV4_ADDR '192.1.2.67'
+road #
+ echo done
+done
+road #
+ # you should see one RSA and on NULL only
+road #
+ grep -e 'auth method: ' -e 'hash algorithm identifier' -e ': authenticated using ' /tmp/pluto.log
+| emitting 2 raw bytes of hash algorithm identifier IKEv2_HASH_ALGORITHM_SHA2_256 into IKEv2 Notify Payload
+| hash algorithm identifier IKEv2_HASH_ALGORITHM_SHA2_256: 00 02
+| emitting 2 raw bytes of hash algorithm identifier IKEv2_HASH_ALGORITHM_SHA2_384 into IKEv2 Notify Payload
+| hash algorithm identifier IKEv2_HASH_ALGORITHM_SHA2_384: 00 03
+| emitting 2 raw bytes of hash algorithm identifier IKEv2_HASH_ALGORITHM_SHA2_512 into IKEv2 Notify Payload
+| hash algorithm identifier IKEv2_HASH_ALGORITHM_SHA2_512: 00 04
+| parsing 2 raw bytes of IKEv2 Notify Payload into hash algorithm identifier (network ordered)
+| hash algorithm identifier (network ordered)
+| parsing 2 raw bytes of IKEv2 Notify Payload into hash algorithm identifier (network ordered)
+| hash algorithm identifier (network ordered)
+| parsing 2 raw bytes of IKEv2 Notify Payload into hash algorithm identifier (network ordered)
+| hash algorithm identifier (network ordered)
+|    auth method: IKEv2_AUTH_NULL (0xd)
+|    auth method: IKEv2_AUTH_DIGSIG (0xe)
+road #
+ # NO ipsec tunnel should be up
+road #
+ ipsec whack --trafficstatus
+road #
+ 

@@ -1,0 +1,73 @@
+/testing/guestbin/swan-prep
+west #
+ grep right.libreswan.org /etc/hosts > /dev/null && echo "TEST FAILED - should not have /etc/hosts entry at start"
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ # will be slow because of the right dns name resolution failing
+west #
+ echo "initdone"
+initdone
+west #
+ sleep 5
+west #
+ ipsec status |grep "===" # should show %dns for pending resolving
+000 "named": 192.0.1.0/24===192.1.2.45<192.1.2.45>:4500[@west]---192.1.2.23...%dns<right.libreswan.org>[@east]===192.0.2.0/24; unrouted; eroute owner: #0
+west #
+ echo "192.1.2.23 right.libreswan.org" >> /etc/hosts
+west #
+ # trigger DDNS event (saves us from waiting)
+west #
+ ipsec whack --ddns
+002 updating pending dns lookups
+1v2 "named" #1: initiating IKEv2 connection
+west #
+ # give conn time to establish by itself
+west #
+ sleep 3
+west #
+ # tunnel should show up in final.sh
+west #
+ echo done
+done
+west #
+ ../../guestbin/ipsec-look.sh
+west NOW
+XFRM state:
+src 192.1.2.23 dst 192.1.2.45
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	aead rfc4106(gcm(aes)) 0xENCAUTHKEY 128
+src 192.1.2.45 dst 192.1.2.23
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	aead rfc4106(gcm(aes)) 0xENCAUTHKEY 128
+XFRM policy:
+src 192.0.1.0/24 dst 192.0.2.0/24
+	dir out priority 2084814 ptype main
+	tmpl src 192.1.2.45 dst 192.1.2.23
+		proto esp reqid REQID mode tunnel
+src 192.0.2.0/24 dst 192.0.1.0/24
+	dir fwd priority 2084814 ptype main
+	tmpl src 192.1.2.23 dst 192.1.2.45
+		proto esp reqid REQID mode tunnel
+src 192.0.2.0/24 dst 192.0.1.0/24
+	dir in priority 2084814 ptype main
+	tmpl src 192.1.2.23 dst 192.1.2.45
+		proto esp reqid REQID mode tunnel
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+default via 192.1.2.254 dev eth1
+192.0.1.0/24 dev eth0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 via 192.1.2.23 dev eth1
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+west #
+ 

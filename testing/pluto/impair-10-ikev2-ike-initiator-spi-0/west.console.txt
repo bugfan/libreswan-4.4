@@ -1,0 +1,27 @@
+/testing/guestbin/swan-prep
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec whack --impair revival
+west #
+ ipsec whack --impair delete-on-retransmit
+west #
+ ipsec whack --impair ike-initiator-spi:0
+west #
+ ../../guestbin/libreswan-up-down.sh aes128 -I 192.0.1.254 192.0.2.254
+002 "aes128": added IKEv2 connection
+1v2 "aes128" #1: initiating IKEv2 connection
+1v2 "aes128" #1: sent IKE_SA_INIT request
+002 "aes128" #1: IMPAIR: retransmit so deleting SA
+002 "aes128" #1: deleting state (STATE_PARENT_I1) and NOT sending notification
+002 "aes128" #1: IMPAIR: skipping revival of connection that is supposed to remain up
+west #
+ grep 'dropping packet' /tmp/pluto.log
+west #
+ 

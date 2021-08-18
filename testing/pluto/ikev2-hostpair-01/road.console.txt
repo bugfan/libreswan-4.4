@@ -1,0 +1,131 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+road #
+ ipsec start
+Redirecting to: [initsystem]
+road #
+ ../../guestbin/wait-until-pluto-started
+road #
+ ipsec whack --impair suppress-retransmits
+road #
+ ipsec auto --add westnet-eastnet-ipv4-psk-ikev2
+002 "westnet-eastnet-ipv4-psk-ikev2": added IKEv2 connection
+road #
+ ipsec whack --impair suppress-retransmits
+road #
+ echo "initdone"
+initdone
+road #
+ ipsec auto --up westnet-eastnet-ipv4-psk-ikev2
+1v2 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #1: sent IKE_SA_INIT request
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #1: sending INITIAL_CONTACT
+1v2 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+003 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #1: authenticated using RSA with SHA2_512 and peer certificate 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org' issued by CA 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=Libreswan test CA for mainca, E=testing@libreswan.org'
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: received INTERNAL_IP4_ADDRESS 192.0.2.1
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: received INTERNAL_IP4_DNS 1.2.3.4
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: received INTERNAL_IP4_DNS 8.8.8.8
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: up-client output: updating resolvconf
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: negotiated connection [192.0.2.1-192.0.2.1:0-65535 0] -> [192.1.2.23-192.1.2.23:0-65535 0]
+004 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: IPsec SA established tunnel mode {ESPinUDP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE NATOA=none NATD=192.1.2.23:4500 DPD=passive}
+road #
+ ../../guestbin/ping-once.sh --up -I 192.0.2.1 192.1.2.23
+up
+road #
+ ipsec whack --trafficstatus
+006 #2: "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23, type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org', lease=192.0.2.1/32
+road #
+ # change ip, emulating sudden switching network
+road #
+ ipsec whack --impair send-no-delete
+road #
+ ipsec stop
+Redirecting to: [initsystem]
+road #
+ ifconfig eth0 192.1.3.210 netmask 255.255.255.0
+road #
+ route add default gw 192.1.3.254
+road #
+ ipsec start
+Redirecting to: [initsystem]
+road #
+ ../../guestbin/wait-until-pluto-started
+road #
+ ipsec whack --impair suppress-retransmits
+road #
+ ipsec auto --add westnet-eastnet-ipv4-psk-ikev2
+002 "westnet-eastnet-ipv4-psk-ikev2": added IKEv2 connection
+road #
+ ipsec auto --up westnet-eastnet-ipv4-psk-ikev2
+1v2 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #1: sent IKE_SA_INIT request
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #1: sending INITIAL_CONTACT
+1v2 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+003 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #1: authenticated using RSA with SHA2_512 and peer certificate 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org' issued by CA 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=Libreswan test CA for mainca, E=testing@libreswan.org'
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: received INTERNAL_IP4_ADDRESS 192.0.2.1
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: received INTERNAL_IP4_DNS 1.2.3.4
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: up-client output: updating resolvconf
+002 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: negotiated connection [192.0.2.1-192.0.2.1:0-65535 0] -> [192.1.2.23-192.1.2.23:0-65535 0]
+004 "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 #2: IPsec SA established tunnel mode {ESPinUDP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE NATOA=none NATD=192.1.2.23:4500 DPD=passive}
+road #
+ # should not fail to ping
+road #
+ ../../guestbin/ping-once.sh --up -I 192.0.2.1 192.1.2.23
+up
+road #
+ ipsec whack --trafficstatus
+006 #2: "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23, type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org', lease=192.0.2.1/32
+road #
+ echo done
+done
+road #
+ ipsec status | grep eastnet | sed "s/192.1.2.254:[0-9]* STATE_/192.1.2.254:PORT STATE_/"
+000 "westnet-eastnet-ipv4-psk-ikev2": 192.1.3.210[C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=road.testing.libreswan.org, E=user-road@testing.libreswan.org,+MC+S=C]---192.1.3.254...192.1.2.23<192.1.2.23>[%fromcert]; unrouted; eroute owner: #0
+000 "westnet-eastnet-ipv4-psk-ikev2":     oriented; my_ip=unset; their_ip=unset; mycert=road; my_updown=ipsec _updown;
+000 "westnet-eastnet-ipv4-psk-ikev2":   xauth us:none, xauth them:none,  my_username=[any]; their_username=[any]
+000 "westnet-eastnet-ipv4-psk-ikev2":   our auth:rsasig, their auth:rsasig
+000 "westnet-eastnet-ipv4-psk-ikev2":   modecfg info: us:client, them:none, modecfg policy:push, dns:unset, domains:unset, cat:unset;
+000 "westnet-eastnet-ipv4-psk-ikev2":   sec_label:unset;
+000 "westnet-eastnet-ipv4-psk-ikev2":   CAs: 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=Libreswan test CA for mainca, E=testing@libreswan.org'...'%any'
+000 "westnet-eastnet-ipv4-psk-ikev2":   ike_life: 28800s; ipsec_life: 28800s; replay_window: 32; rekey_margin: 540s; rekey_fuzz: 100%; keyingtries: 0;
+000 "westnet-eastnet-ipv4-psk-ikev2":   retransmit-interval: 9999ms; retransmit-timeout: 99s; iketcp:no; iketcp-port:4500;
+000 "westnet-eastnet-ipv4-psk-ikev2":   initial-contact:yes; cisco-unity:no; fake-strongswan:no; send-vendorid:no; send-no-esp-tfc:no;
+000 "westnet-eastnet-ipv4-psk-ikev2":   policy: IKEv2+RSASIG+ECDSA+ENCRYPT+TUNNEL+PFS+IKEV2_ALLOW_NARROWING+IKE_FRAG_ALLOW+ESN_NO+RSASIG_v1_5;
+000 "westnet-eastnet-ipv4-psk-ikev2":   v2-auth-hash-policy: SHA2_256+SHA2_384+SHA2_512;
+000 "westnet-eastnet-ipv4-psk-ikev2":   conn_prio: 32,32; interface: eth0; metric: 0; mtu: unset; sa_prio:auto; sa_tfc:none;
+000 "westnet-eastnet-ipv4-psk-ikev2":   nflog-group: unset; mark: unset; vti-iface:unset; vti-routing:no; vti-shared:no; nic-offload:auto;
+000 "westnet-eastnet-ipv4-psk-ikev2":   our idtype: ID_DER_ASN1_DN; our id=C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=road.testing.libreswan.org, E=user-road@testing.libreswan.org; their idtype: %fromcert; their id=%fromcert
+000 "westnet-eastnet-ipv4-psk-ikev2":   dpd: action:hold; delay:0; timeout:0; nat-t: encaps:auto; nat_keepalive:yes; ikev1_natt:both
+000 "westnet-eastnet-ipv4-psk-ikev2":   newest ISAKMP SA: #0; newest IPsec SA: #0; conn serial: $1;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]: 192.0.2.1/32===192.1.3.210[C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=road.testing.libreswan.org, E=user-road@testing.libreswan.org,+MC+S=C]---192.1.3.254...192.1.2.23<192.1.2.23>[C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org]; erouted; eroute owner: #2
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:     oriented; my_ip=192.0.2.1; their_ip=unset; mycert=road; my_updown=ipsec _updown;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   xauth us:none, xauth them:none,  my_username=[any]; their_username=[any]
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   our auth:rsasig, their auth:rsasig
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   modecfg info: us:client, them:none, modecfg policy:push, dns:unset, domains:unset, cat:unset;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   sec_label:unset;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   CAs: 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=Libreswan test CA for mainca, E=testing@libreswan.org'...'%any'
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   ike_life: 28800s; ipsec_life: 28800s; replay_window: 32; rekey_margin: 540s; rekey_fuzz: 100%; keyingtries: 0;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   retransmit-interval: 9999ms; retransmit-timeout: 99s; iketcp:no; iketcp-port:4500;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   initial-contact:yes; cisco-unity:no; fake-strongswan:no; send-vendorid:no; send-no-esp-tfc:no;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   policy: IKEv2+RSASIG+ECDSA+ENCRYPT+TUNNEL+PFS+UP+IKEV2_ALLOW_NARROWING+IKE_FRAG_ALLOW+ESN_NO+RSASIG_v1_5;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   v2-auth-hash-policy: SHA2_256+SHA2_384+SHA2_512;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   conn_prio: 32,32; interface: eth0; metric: 0; mtu: unset; sa_prio:auto; sa_tfc:none;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   nflog-group: unset; mark: unset; vti-iface:unset; vti-routing:no; vti-shared:no; nic-offload:auto;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   our idtype: ID_DER_ASN1_DN; our id=C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=road.testing.libreswan.org, E=user-road@testing.libreswan.org; their idtype: ID_DER_ASN1_DN; their id=C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   dpd: action:hold; delay:0; timeout:0; nat-t: encaps:auto; nat_keepalive:yes; ikev1_natt:both
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   newest ISAKMP SA: #1; newest IPsec SA: #2; conn serial: $2, instantiated from: $1;
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   IKEv2 algorithm newest: AES_GCM_16_256-HMAC_SHA2_512-MODP2048
+000 "westnet-eastnet-ipv4-psk-ikev2"[1]:   ESP algorithm newest: AES_GCM_16_256-NONE; pfsgroup=<Phase1>
+000 #1: "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23:4500 STATE_V2_ESTABLISHED_IKE_SA (established IKE SA); EVENT_SA_REKEY in XXs; newest ISAKMP; idle;
+000 #2: "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23:4500 STATE_V2_ESTABLISHED_CHILD_SA (IPsec SA established); EVENT_SA_REKEY in XXs; newest IPSEC; eroute owner; isakmp#1; idle;
+000 #2: "westnet-eastnet-ipv4-psk-ikev2"[1] 192.1.2.23 esp.ESPSPIi@192.1.2.23 esp.ESPSPIi@192.1.3.210 tun.0@192.1.2.23 tun.0@192.1.3.210 Traffic: ESPin=84B ESPout=84B! ESPmax=0B 
+road #
+ # should show no hits
+road #
+ grep INVALID_IKE_SPI /tmp/pluto.log
+road #
+ grep MSG_TRUNC /tmp/pluto.log
+road #
+ grep "cannot route" /tmp/pluto.log
+road #
+ 

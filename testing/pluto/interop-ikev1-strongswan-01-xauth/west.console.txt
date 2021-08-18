@@ -1,0 +1,96 @@
+/testing/guestbin/swan-prep
+west #
+ # confirm that the network is alive
+west #
+ ../../guestbin/wait-until-alive -I 192.0.1.254 192.0.2.254
+destination -I 192.0.1.254 192.0.2.254 is alive
+west #
+ # ensure that clear text does not get through
+west #
+ iptables -A INPUT -i eth1 -s 192.0.2.0/24 -j DROP
+west #
+ iptables -I INPUT -m policy --dir in --pol ipsec -j ACCEPT
+west #
+ # confirm clear text does not get through
+west #
+ ../../guestbin/ping-once.sh --down -I 192.0.1.254 192.0.2.254
+down
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-eastnet-ikev1
+002 "westnet-eastnet-ikev1": added IKEv1 connection
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec auto --up westnet-eastnet-ikev1
+002 "westnet-eastnet-ikev1" #1: initiating IKEv1 Main Mode connection
+1v1 "westnet-eastnet-ikev1" #1: sent Main Mode request
+1v1 "westnet-eastnet-ikev1" #1: sent Main Mode I2
+1v1 "westnet-eastnet-ikev1" #1: sent Main Mode I3
+002 "westnet-eastnet-ikev1" #1: Peer ID is ID_FQDN: '@east'
+004 "westnet-eastnet-ikev1" #1: IKE SA established {auth=PRESHARED_KEY cipher=AES_CBC_128 integ=HMAC_SHA1 group=MODP2048}
+002 "westnet-eastnet-ikev1" #1: XAUTH: Answering XAUTH challenge with user='use3'
+004 "westnet-eastnet-ikev1" #1: XAUTH client - possibly awaiting CFG_set {auth=PRESHARED_KEY cipher=AES_CBC_128 integ=HMAC_SHA1 group=MODP2048}
+002 "westnet-eastnet-ikev1" #1: XAUTH: Successfully Authenticated
+004 "westnet-eastnet-ikev1" #1: XAUTH client - possibly awaiting CFG_set {auth=PRESHARED_KEY cipher=AES_CBC_128 integ=HMAC_SHA1 group=MODP2048}
+002 "westnet-eastnet-ikev1" #1: modecfg: Sending IP request (MODECFG_I1)
+005 "westnet-eastnet-ikev1" #1: Received IPv4 address: 192.0.1.254/32
+004 "westnet-eastnet-ikev1" #1: IKE SA established {auth=PRESHARED_KEY cipher=AES_CBC_128 integ=HMAC_SHA1 group=MODP2048}
+002 "westnet-eastnet-ikev1" #2: initiating Quick Mode IKEv1+PSK+ENCRYPT+TUNNEL+PFS+UP+XAUTH+MODECFG_PULL+IKE_FRAG_ALLOW+ESN_NO
+1v1 "westnet-eastnet-ikev1" #2: sent Quick Mode request
+004 "westnet-eastnet-ikev1" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_128-HMAC_SHA1_96 NATOA=none NATD=none DPD=active username=use3}
+west #
+ ../../guestbin/ping-once.sh --up -I 192.0.1.254 192.0.2.254
+up
+west #
+ # wait for a few DPDs
+west #
+ sleep 11
+west #
+ grep "R_U_THERE_ACK, seqno received" /tmp/pluto.log >/dev/null || echo DPD failed
+west #
+ # confirm --down is processed properly too
+west #
+ ipsec auto --down westnet-eastnet-ikev1
+002 "westnet-eastnet-ikev1": terminating SAs using this connection
+002 "westnet-eastnet-ikev1" #2: deleting state (STATE_QUICK_I2) and sending notification
+005 "westnet-eastnet-ikev1" #2: ESP traffic information: in=84B out=84B XAUTHuser=use3
+002 "westnet-eastnet-ikev1" #1: deleting state (STATE_MAIN_I4) and sending notification
+west #
+ echo done
+done
+west #
+ if [ -f /var/run/pluto/pluto.pid ]; then ../../guestbin/ipsec-look.sh ; fi
+west NOW
+XFRM state:
+XFRM policy:
+src 192.0.1.254/32 dst 0.0.0.0/0
+	dir out priority 2080766 ptype main
+	tmpl src 0.0.0.0 dst 0.0.0.0
+		proto esp reqid REQID mode transport
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+0.0.0.0/1 dev eth1 scope link src 192.0.1.254
+default via 192.1.2.254 dev eth1
+128.0.0.0/1 dev eth1 scope link src 192.0.1.254
+192.0.1.0/24 dev eth0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 via 192.1.2.23 dev eth1
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+west #
+ if [ -f /var/run/charon.pid -o -f /var/run/strongswan/charon.pid ]; then strongswan status ; fi
+west #
+ if [ -f /var/run/charon.pid -o -f /var/run/strongswan/charon.pid ]; then grep "received DELETE for ESP CHILD_SA with SPI" /tmp/charon.log > /dev/null || echo "DELETE FAILED"; fi
+west #
+ if [ -f /var/run/charon.pid -o -f /var/run/strongswan/charon.pid ]; then grep "processing failed" /tmp/charon.log; fi
+west #
+ 

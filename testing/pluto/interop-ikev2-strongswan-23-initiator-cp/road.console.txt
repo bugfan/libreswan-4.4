@@ -1,0 +1,41 @@
+/testing/guestbin/swan-prep --userland strongswan
+road #
+ ../../guestbin/strongswan-start.sh
+road #
+ echo "initdone"
+initdone
+road #
+ strongswan up roadnet-eastnet-ikev2 | grep -v resolvconf
+initiating IKE_SA roadnet-eastnet-ikev2[1] to 192.1.2.23
+generating IKE_SA_INIT request 0 [ SA KE No N(NATD_S_IP) N(NATD_D_IP) N(FRAG_SUP) N(HASH_ALG) N(REDIR_SUP) ]
+sending packet: from 192.1.3.209[500] to 192.1.2.23[500] (XXX bytes)
+received packet: from 192.1.2.23[500] to 192.1.3.209[500] (XXX bytes)
+parsed IKE_SA_INIT response 0 [ SA KE No N(FRAG_SUP) N(NATD_S_IP) N(NATD_D_IP) ]
+selected proposal: IKE:AES_GCM_16_256/PRF_HMAC_SHA2_512/MODP_2048
+authentication of 'road' (myself) with pre-shared key
+establishing CHILD_SA roadnet-eastnet-ikev2{1}
+generating IKE_AUTH request 1 [ IDi N(INIT_CONTACT) IDr AUTH CPRQ(ADDR DNS) SA TSi TSr N(EAP_ONLY) N(MSG_ID_SYN_SUP) ]
+sending packet: from 192.1.3.209[500] to 192.1.2.23[500] (XXX bytes)
+received packet: from 192.1.2.23[500] to 192.1.3.209[500] (XXX bytes)
+parsed IKE_AUTH response 1 [ IDr AUTH CPRP(ADDR DNS DNS) SA TSi TSr ]
+authentication of 'east' with pre-shared key successful
+IKE_SA roadnet-eastnet-ikev2[1] established between 192.1.3.209[road]...192.1.2.23[east]
+scheduling reauthentication in XXXs
+maximum IKE_SA lifetime XXXs
+adding DNS server failed
+adding DNS server failed
+handling INTERNAL_IP4_DNS attribute failed
+adding DNS server failed
+handling INTERNAL_IP4_DNS attribute failed
+installing new virtual IP 192.0.2.1
+selected proposal: ESP:AES_CBC_256/HMAC_SHA2_512_256/NO_EXT_SEQ
+CHILD_SA roadnet-eastnet-ikev2{1} established with SPIs SPISPI_i SPISPI_o and TS 192.0.2.1/32 === 0.0.0.0/0
+connection 'roadnet-eastnet-ikev2' established successfully
+road #
+ ../../guestbin/ping-once.sh --up -I 192.0.2.1 192.1.2.23
+up
+road #
+ echo done
+done
+road #
+ 

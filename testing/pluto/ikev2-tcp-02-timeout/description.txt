@@ -1,0 +1,5 @@
+IKEv2 TCP timeouts
+
+The initiator (west) sends part of an IKETCP request.  The responder's
+pluto (east) or kernel is then expected to timeout and close the
+stream.

@@ -1,0 +1,17 @@
+/testing/guestbin/swan-prep
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add north-west-default
+002 "north-west-default": added IKEv2 connection
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec whack --trafficstatus
+006 #2: "north-west-default", type=ESP, add_time=1234567890, inBytes=336, outBytes=336, id='@north'
+west #
+ 

@@ -1,0 +1,31 @@
+/testing/guestbin/swan-prep
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-eastnet-ipv4-psk-ikev2
+002 "westnet-eastnet-ipv4-psk-ikev2": added IKEv2 connection
+west #
+ ipsec whack --impair delete-on-retransmit
+west #
+ echo "initdone"
+initdone
+west #
+ #expected to fail, since west is sending a impaired bad IKE_AUTH
+west #
+ ipsec auto --up westnet-eastnet-ipv4-psk-ikev2
+1v2 "westnet-eastnet-ipv4-psk-ikev2" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-ipv4-psk-ikev2" #1: sent IKE_SA_INIT request
+1v2 "westnet-eastnet-ipv4-psk-ikev2" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+002 "westnet-eastnet-ipv4-psk-ikev2" #2: no useful state microcode entry found for incoming packet
+002 "westnet-eastnet-ipv4-psk-ikev2" #2: IMPAIR: retransmit so deleting SA
+002 "westnet-eastnet-ipv4-psk-ikev2" #1: deleting state (STATE_PARENT_I2) and NOT sending notification
+003 "westnet-eastnet-ipv4-psk-ikev2" #2: reschedule pending CHILD SA - the IKE SA #1 is going away
+002 "westnet-eastnet-ipv4-psk-ikev2" #1: deleting IKE SA but connection is supposed to remain up; schedule EVENT_REVIVE_CONNS
+west #
+ echo done
+done
+west #
+ 

@@ -1,0 +1,155 @@
+/testing/guestbin/swan-prep
+west #
+ # confirm that the network is alive
+west #
+ ../../guestbin/wait-until-alive -I 192.0.1.254 192.0.2.254
+destination -I 192.0.1.254 192.0.2.254 is alive
+west #
+ # adding some routes to sow confusion on purpose
+west #
+ ip route add 192.168.1.1 via 192.0.1.254 dev eth0
+west #
+ ip route add 192.168.1.2 via 192.1.2.45 dev eth1
+west #
+ ip route add 192.168.1.16/28 via 192.1.2.45 dev eth1
+west #
+ ip route add 25.1.0.0/16 via 192.0.1.254
+west #
+ ip route add 25.2.0.0/16 via 192.1.2.45
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-all
+002 "westnet-all": added IKEv1 connection
+west #
+ ip route list
+default via 192.1.2.254 dev eth1
+25.1.0.0/16 via 192.0.1.254 dev eth0
+25.2.0.0/16 via 192.1.2.45 dev eth1
+192.0.1.0/24 dev eth0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 via 192.1.2.23 dev eth1
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+192.168.1.1 via 192.0.1.254 dev eth0
+192.168.1.2 via 192.1.2.45 dev eth1
+192.168.1.16/28 via 192.1.2.45 dev eth1
+west #
+ for i in `seq 1 12`; do ipsec auto --add orient$i; done
+002 "orient1": added IKEv1 connection
+002 "orient2": added IKEv1 connection
+002 "orient3": added IKEv1 connection
+002 "orient4": added IKEv1 connection
+002 "orient5": added IKEv1 connection
+002 "orient6": added IKEv1 connection
+002 "orient7": added IKEv1 connection
+002 "orient8": added IKEv1 connection
+002 "orient9": added IKEv1 connection
+002 "orient10": added IKEv1 connection
+002 "orient11": added IKEv1 connection
+002 "orient12": added IKEv1 connection
+west #
+ ipsec auto --status |grep orient |grep "eroute owner"
+000 "orient1": 192.1.2.45---192.1.2.254...%any; unrouted; eroute owner: #0
+000 "orient10": 192.1.2.45---192.1.2.254...8.8.8.8<8.8.8.8>; unrouted; eroute owner: #0
+000 "orient11": 192.1.2.45---192.1.2.254...8.8.8.8<8.8.8.8>; unrouted; eroute owner: #0
+000 "orient12": 192.1.2.45---192.1.2.254...8.8.8.8<8.8.8.8>; unrouted; eroute owner: #0
+000 "orient2": 192.1.2.45---192.1.2.254...%any; unrouted; eroute owner: #0
+000 "orient3": 192.1.2.45---192.1.2.254...%any; unrouted; eroute owner: #0
+000 "orient4": 192.1.2.45---192.1.2.254...%any; unrouted; eroute owner: #0
+000 "orient5": 192.1.2.45<192.1.2.45>...8.8.8.8<8.8.8.8>; unrouted; eroute owner: #0
+000 "orient6": 192.1.2.45<192.1.2.45>---192.1.2.254...8.8.8.8<8.8.8.8>; unrouted; eroute owner: #0
+000 "orient7": 192.1.2.45<192.1.2.45>---192.1.2.254...8.8.8.8<8.8.8.8>; unrouted; eroute owner: #0
+000 "orient8": 192.1.2.45<192.1.2.45>...8.8.8.8<8.8.8.8>; unrouted; eroute owner: #0
+000 "orient9": 192.1.2.45---192.1.2.254...8.8.8.8<8.8.8.8>; unrouted; eroute owner: #0
+west #
+ ipsec whack --impair suppress-retransmits
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec auto --up westnet-all
+002 "westnet-all" #1: initiating IKEv1 Main Mode connection
+1v1 "westnet-all" #1: sent Main Mode request
+1v1 "westnet-all" #1: sent Main Mode I2
+1v1 "westnet-all" #1: sent Main Mode I3
+002 "westnet-all" #1: Peer ID is ID_FQDN: '@east'
+003 "westnet-all" #1: authenticated using RSA with SHA1 and preloaded certificate '@east'
+004 "westnet-all" #1: IKE SA established {auth=RSA_SIG cipher=AES_CBC_256 integ=HMAC_SHA2_256 group=MODP2048}
+002 "westnet-all" #2: initiating Quick Mode IKEv1+RSASIG+ENCRYPT+TUNNEL+PFS+UP+IKE_FRAG_ALLOW+ESN_NO
+1v1 "westnet-all" #2: sent Quick Mode request
+004 "westnet-all" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_128-HMAC_SHA1_96 NATOA=none NATD=none DPD=passive}
+west #
+ ../../guestbin/ping-once.sh --up -I 192.0.1.254 192.0.2.254
+up
+west #
+ ipsec trafficstatus
+006 #2: "westnet-all", type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='@east'
+west #
+ ip route list
+default via 192.1.2.254 dev eth1
+25.1.0.0/16 via 192.0.1.254 dev eth0
+25.2.0.0/16 via 192.1.2.45 dev eth1
+192.0.1.0/24 dev eth0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 via 192.1.2.23 dev eth1
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+192.168.1.1 via 192.0.1.254 dev eth0
+192.168.1.2 via 192.1.2.45 dev eth1
+192.168.1.16/28 via 192.1.2.45 dev eth1
+west #
+ # testing re-orienting
+west #
+ ipsec auto --replace westnet-all
+002 "westnet-all": terminating SAs using this connection
+002 "westnet-all" #2: deleting state (STATE_QUICK_I2) and sending notification
+005 "westnet-all" #2: ESP traffic information: in=84B out=84B
+002 "westnet-all" #1: deleting state (STATE_MAIN_I4) and sending notification
+002 "westnet-all": added IKEv1 connection
+west #
+ ipsec auto --status |grep westnet
+000 "westnet-all": 192.0.1.0/24===192.1.2.45<192.1.2.45>[@west]...192.1.2.23<192.1.2.23>[@east]===0.0.0.0/0; unrouted; eroute owner: #0
+000 "westnet-all":     oriented; my_ip=unset; their_ip=unset; my_updown=ipsec _updown;
+000 "westnet-all":   xauth us:none, xauth them:none,  my_username=[any]; their_username=[any]
+000 "westnet-all":   our auth:rsasig, their auth:rsasig
+000 "westnet-all":   modecfg info: us:none, them:none, modecfg policy:push, dns:unset, domains:unset, cat:unset;
+000 "westnet-all":   sec_label:unset;
+000 "westnet-all":   ike_life: 28800s; ipsec_life: 28800s; replay_window: 32; rekey_margin: 540s; rekey_fuzz: 100%; keyingtries: 0;
+000 "westnet-all":   retransmit-interval: 9999ms; retransmit-timeout: 99s; iketcp:no; iketcp-port:4500;
+000 "westnet-all":   initial-contact:no; cisco-unity:no; fake-strongswan:no; send-vendorid:no; send-no-esp-tfc:no;
+000 "westnet-all":   policy: IKEv1+RSASIG+ENCRYPT+TUNNEL+PFS+IKE_FRAG_ALLOW+ESN_NO;
+000 "westnet-all":   conn_prio: 24,0; interface: eth1; metric: 0; mtu: unset; sa_prio:auto; sa_tfc:none;
+000 "westnet-all":   nflog-group: unset; mark: unset; vti-iface:unset; vti-routing:no; vti-shared:no; nic-offload:auto;
+000 "westnet-all":   our idtype: ID_FQDN; our id=@west; their idtype: ID_FQDN; their id=@east
+000 "westnet-all":   dpd: action:hold; delay:0; timeout:0; nat-t: encaps:auto; nat_keepalive:yes; ikev1_natt:both
+000 "westnet-all":   newest ISAKMP SA: #0; newest IPsec SA: #0; conn serial: $14;
+west #
+ echo done
+done
+west #
+ ../../guestbin/ipsec-look.sh
+west NOW
+XFRM state:
+XFRM policy:
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+default via 192.1.2.254 dev eth1
+25.1.0.0/16 via 192.0.1.254 dev eth0
+25.2.0.0/16 via 192.1.2.45 dev eth1
+192.0.1.0/24 dev eth0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 via 192.1.2.23 dev eth1
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+192.168.1.1 via 192.0.1.254 dev eth0
+192.168.1.2 via 192.1.2.45 dev eth1
+192.168.1.16/28 via 192.1.2.45 dev eth1
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+west #
+ ../../guestbin/xfrmcheck.sh
+west #
+ ipsec whack --shutdown
+west #
+ 

@@ -1,0 +1,8 @@
+Basic pluto X.509 test but now road and east are dropping UDP packets
+> 1500 (tried dropping fragments but linux outsmarts us)
+
+Our default policy of fragmentation=yes should kick in and we start sending
+fragments.
+
+As a result, this connection should establish successfully.
+

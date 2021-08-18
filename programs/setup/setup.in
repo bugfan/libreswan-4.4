@@ -1,0 +1,255 @@
+#!@SHELL_BINARY@
+# IPsec startup and shutdown command
+# Copyright (C) 1998, 1999, 2001  Henry Spencer.
+# Copyright (C) 2012 Paul Wouters <paul@libreswan.org>
+# Copyright (C) 2013-2019 Tuomo Soini <tis@foobar.fi>
+# Copyright (C) 2016 Kim B. Heino <b@bbbs.net>
+# Copyright (C) 2019 Paul Wouters <pwouters@redhat.com>
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.  See <https://www.gnu.org/licenses/gpl2.txt>.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# This is the version for use on Linux.
+
+# Misc. paths (some of this should perhaps be overridable from ipsec.conf).
+rundir=@IPSEC_RUNDIR@
+
+#pluto searches the current directory, so this is required for making it selinux compliant
+cd /
+
+#/etc/resolv.conf related paths
+LIBRESWAN_RESOLV_CONF=${rundir}/libreswan-resolv-conf-backup
+ORIG_RESOLV_CONF=@FINALSYSCONFDIR@/resolv.conf
+
+initsystem="@INITSYSTEM@"
+
+# linux_START
+# The stock Fedora/RHEL RPM gets tested in side namespaces where
+# things get invoked directly is needed.
+if echo $SUDO_COMMAND | grep "/bin/nsenter " && test -f /testing/guestbin/swan-prep > /dev/null 2>&1 ; then
+    # direct start
+    initsystem=namespaces
+fi
+# linux_STOP
+
+case "$1" in
+
+    start|--start|_autostart)
+	# preliminaries
+	mkdir -p ${rundir}
+	chmod 700 ${rundir} > /dev/null 2>/dev/null
+
+	# start regular pluto daemon in a restart loop
+	case "${initsystem}" in
+	    systemd )
+		echo "Redirecting to: systemctl start ipsec.service"
+		exec systemctl start ipsec.service
+		;;
+	    rhsysv )
+		echo "Redirecting to: service ipsec start"
+		exec service ipsec start
+		;;
+	    upstart )
+		echo "Redirecting to: start ipsec"
+		exec start ipsec
+		;;
+	    openrc )
+		echo "Redirecting to: rc-service ipsec start"
+		exec rc-service ipsec start
+		;;
+	    sysvinit )
+		echo "Redirecting to: /etc/init.d/ipsec start"
+		exec /etc/init.d/ipsec start
+		;;
+	    docker )
+	    	echo "Redirecting to: /etc/init.d/ipsec start"
+		exec /etc/init.d/ipsec start
+		;;
+	    rc.d )
+		echo "Redirecting to: /etc/rc.d/pluto onestart"
+		exec /etc/rc.d/pluto onestart
+		;;
+	    namespaces )
+		echo "Redirecting to: namespaces direct start via ipsec pluto"
+		exec ipsec pluto --config @FINALSYSCONFDIR@/ipsec.conf --leak-detective
+		;;
+	    "" )
+		what="ipsec pluto --logfile @FINALLOGDIR@/pluto.log --config @FINALSYSCONFDIR@/ipsec.conf --leak-detective"
+		echo "Redirecting to: ${what} [start manually]"
+		exec ${what}
+		;;
+	    * )
+		echo "Unknown init system ${initsystem} in use - aborted"
+		exit 3
+		;;
+	esac
+	exit 0 # never happens?
+	;;
+
+  stop|--stop|_autostop)	# _autostop is same as stop
+	# Shut things down.
+
+	case "${initsystem}" in
+	    systemd )
+		echo "Redirecting to: systemctl stop ipsec.service"
+		# don't exec, we need to cleanup the IPsec stack afterwards
+		systemctl stop ipsec.service
+		;;
+	    rhsysv )
+		echo "Redirecting to: service ipsec stop"
+		exec service ipsec stop
+		;;
+	    upstart )
+		echo "Redirecting to: stop ipsec"
+		stop ipsec
+		;;
+	    openrc )
+		echo "Redirecting to: rc-service ipsec stop"
+		exec rc-service ipsec stop
+		;;
+	    sysvinit )
+		echo "Redirecting to: /etc/init.d/ipsec stop"
+		exec /etc/init.d/ipsec stop
+		;;
+	    docker )
+		echo "Redirecting to: /etc/init.d/ipsec stop"
+		exec /etc/init.d/ipsec stop
+		;;
+	    rc.d )
+		echo "Redirecting to: /etc/rc.d/pluto onestop"
+		/etc/rc.d/pluto onestop
+		;;
+	    namespaces )
+		echo "Redirecting to: namespaces direct stop via ipsec whack --shutdown"
+		ipsec whack --shutdown
+		ip xfrm state flush
+		;;
+	    "" )
+		what="ipsec whack --shutdown"
+		echo "Redirecting to: ${what} [stop manually]"
+		${what}
+		;;
+	    * )
+		echo "Unknown init system ${initsystem} in use - aborted"
+		exit 3
+		;;
+	esac
+
+       	# Remove any loaded IPsec stack
+	# linux_START
+	[ -f /proc/modules ] && ipsec _stackmanager stop
+	# linux_STOP
+
+	# If stack is non-modular, we want to force clean too
+	# linux_START
+	[ -f /proc/sys/net/core/xfrm_acq_expires ] && ip xfrm state flush && ip xfrm policy flush
+	# linux_STOP
+
+	# Cleaning up backup resolv.conf
+	if [ -e ${LIBRESWAN_RESOLV_CONF} ]; then
+	    if grep 'Libreswan' ${ORIG_RESOLV_CONF} > /dev/null 2>&1; then
+		cp ${LIBRESWAN_RESOLV_CONF} ${ORIG_RESOLV_CONF}
+	    fi
+	    rm -f  ${LIBRESWAN_RESOLV_CONF}
+	fi
+	exit 0
+	;;
+
+    status|--status)
+	case "${initsystem}" in
+	    systemd )
+		echo "Redirecting to: systemctl status ipsec.service"
+		exec systemctl status ipsec.service
+		;;
+	    rhsysv )
+		echo "Redirecting to: service ipsec status"
+		exec service ipsec status
+		;;
+	    upstart )
+		echo "Redirecting to: status ipsec"
+		exec status ipsec
+		;;
+	    openrc )
+		echo "Redirecting to: rc-service ipsec status"
+		exec rc-service ipsec status
+		;;
+	    sysvinit )
+		echo "Redirecting to: /etc/init.d/ipsec status"
+		exec /etc/init.d/ipsec status
+		;;
+	    rc.d )
+		echo "Redirecting to: /etc/rc.d/pluto onestatus"
+		exec /etc/rc.d/pluto onestatus
+		;;
+	    * )
+		echo "Unknown init system ${initsystem} in use - aborted"
+		exit 3
+		;;
+	esac
+	exit 0
+	;;
+
+    restart|--restart)
+	# assumes preparations for running have already been done,
+	# as service should be running now
+	case "${initsystem}" in
+	    systemd )
+		echo "Redirecting to: systemctl restart ipsec.service"
+		exec systemctl restart ipsec.service
+		;;
+	    rhsysv )
+		echo "Redirecting to: service ipsec restart"
+		exec service ipsec restart
+		;;
+	    upstart )
+		echo "Redirecting to: restart ipsec"
+		exec restart ipsec
+		;;
+	    openrc )
+		echo "Redirecting to: rc-service ipsec restart"
+		exec rc-service ipsec restart
+		;;
+	    sysvinit )
+		echo "Redirecting to: /etc/init.d/ipsec restart"
+		exec /etc/init.d/ipsec restart
+		;;
+	    docker )
+		echo "Redirecting to: /etc/init.d/ipsec restart"
+		exec /etc/init.d/ipsec restart
+		;;
+	    rc.d )
+		echo "Redirecting to: /etc/rc.d/pluto onerestart"
+		exec /etc/rc.d/pluto onerestart
+		;;
+	    namespaces )
+		echo "Redirecting to: namespaces"
+		ipsec whack --shutdown
+		exec ipsec pluto --config @FINALSYSCONFDIR@/ipsec.conf --leak-detective
+		;;
+	    "" )
+		echo "Redirecting to: [stop start manually]"
+		${0} stop
+		${0} start
+		exit 0
+		;;
+	    * )
+		echo "Unknown init system ${initsystem} in use - aborted"
+		exit 3
+		;;
+	esac
+	exit 0
+	;;
+
+    *)
+	echo "Usage: {--start|--stop|--restart|--status}" >&2
+	exit 2
+esac
+
+exit 0

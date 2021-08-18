@@ -1,0 +1,17 @@
+/testing/guestbin/swan-prep
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add road-east
+002 "road-east": added IKEv1 connection
+east #
+ echo "initdone"
+initdone
+east #
+ ipsec whack --trafficstatus
+006 #2: "road-east", type=ESP, add_time=1234567890, inBytes=336, outBytes=336, id='@road'
+east #
+ 

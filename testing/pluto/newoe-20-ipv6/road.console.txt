@@ -1,0 +1,128 @@
+/testing/guestbin/swan-prep --6
+road #
+ cp policies/* /etc/ipsec.d/policies/
+road #
+ echo "2001:db8:1:2::0/64" >>  /etc/ipsec.d/policies/private-or-clear
+road #
+ echo "2001:db8:1:3::254/128" >> /etc/ipsec.d/policies/clear
+road #
+ echo "2001:db8:1:2::254/128" >> /etc/ipsec.d/policies/clear
+road #
+ echo "fe80::/10" >> /etc/ipsec.d/policies/clear
+road #
+ ipsec start
+Redirecting to: [initsystem]
+road #
+ # ensure for tests acquires expire before our failureshunt=2m
+road #
+ echo 30 > /proc/sys/net/core/xfrm_acq_expires
+road #
+ ../../guestbin/wait-until-pluto-started
+road #
+ # give OE policies time to load
+road #
+ ../../guestbin/wait-for.sh --match 'loaded 5' -- ipsec auto --status
+000 Total IPsec connections: loaded 5, active 0
+road #
+ ip -s xfrm monitor > /tmp/xfrm-monitor.out &
+[x] PID
+road #
+ echo "initdone"
+initdone
+road #
+ ping6 -n -q -c 8 2001:db8:1:2::23
+PING 2001:db8:1:2::23(2001:db8:1:2::23) 56 data bytes
+--- 2001:db8:1:2::23 ping statistics ---
+8 packets transmitted, 7 received, 12% packet loss, time XXXX
+rtt min/avg/max/mdev = 0.XXX/0.XXX/0.XXX/0.XXX ms
+road #
+ ipsec whack --trafficstatus
+006 #2: "private-or-clear#2001:db8:1:2::/64"[1] ...2001:db8:1:2::23, type=ESP, add_time=1234567890, inBytes=728, outBytes=728, id='ID_NULL'
+road #
+ ipsec whack --shuntstatus
+000 Bare Shunt list:
+000  
+road #
+ killall ip > /dev/null 2> /dev/null
+road #
+ cp /tmp/xfrm-monitor.out OUTPUT/road.xfrm-monitor.txt
+road #
+ echo done
+done
+road #
+ ../../guestbin/ipsec-look.sh
+road NOW
+XFRM state:
+src 2001:db8:1:2::23 dst 2001:db8:1:3::209
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	aead rfc4106(gcm(aes)) 0xENCAUTHKEY 128
+src 2001:db8:1:3::209 dst 2001:db8:1:2::23
+	proto esp spi 0xSPISPI reqid REQID mode tunnel
+	replay-window 32 flag af-unspec
+	aead rfc4106(gcm(aes)) 0xENCAUTHKEY 128
+src 2001:db8:1:3::209 dst 2001:db8:1:2::23
+	proto esp spi 0x00000000 reqid REQID mode transport
+	replay-window 0 
+	sel src 2001:db8:1:3::209/128 dst 2001:db8:1:2::23/128 proto udp sport EPHEM dport 1025 
+XFRM policy:
+src 2001:db8:1:2::254/128 dst 2001:db8:1:3::209/128
+	dir fwd priority 1539967 ptype main
+src 2001:db8:1:2::254/128 dst 2001:db8:1:3::209/128
+	dir in priority 1539967 ptype main
+src 2001:db8:1:3::209/128 dst 2001:db8:1:2::254/128
+	dir out priority 1539967 ptype main
+src 2001:db8:1:3::209/128 dst 2001:db8:1:3::254/128
+	dir out priority 1539967 ptype main
+src 2001:db8:1:3::209/128 dst fe80::/10
+	dir out priority 1539967 ptype main
+src 2001:db8:1:3::254/128 dst 2001:db8:1:3::209/128
+	dir fwd priority 1539967 ptype main
+src 2001:db8:1:3::254/128 dst 2001:db8:1:3::209/128
+	dir in priority 1539967 ptype main
+src fe80::/10 dst 2001:db8:1:3::209/128
+	dir fwd priority 1539967 ptype main
+src fe80::/10 dst 2001:db8:1:3::209/128
+	dir in priority 1539967 ptype main
+src 2001:db8:1:2::23/128 dst 2001:db8:1:3::209/128
+	dir fwd priority 2064255 ptype main
+	tmpl src 2001:db8:1:2::23 dst 2001:db8:1:3::209
+		proto esp reqid REQID mode tunnel
+src 2001:db8:1:2::23/128 dst 2001:db8:1:3::209/128
+	dir in priority 2064255 ptype main
+	tmpl src 2001:db8:1:2::23 dst 2001:db8:1:3::209
+		proto esp reqid REQID mode tunnel
+src 2001:db8:1:3::209/128 dst 2001:db8:1:2::23/128
+	dir out priority 2064255 ptype main
+	tmpl src 2001:db8:1:3::209 dst 2001:db8:1:2::23
+		proto esp reqid REQID mode tunnel
+src 2001:db8:1:3::209/128 dst 2001:db8:1:2::/64
+	dir out priority 2064319 ptype main
+	tmpl src :: dst ::
+		proto esp reqid REQID mode transport
+src ::/0 dst ::/0 proto ipv6-icmp type 135
+	dir fwd priority 1 ptype main
+src ::/0 dst ::/0 proto ipv6-icmp type 135
+	dir in priority 1 ptype main
+src ::/0 dst ::/0 proto ipv6-icmp type 135
+	dir out priority 1 ptype main
+src ::/0 dst ::/0 proto ipv6-icmp type 136
+	dir fwd priority 1 ptype main
+src ::/0 dst ::/0 proto ipv6-icmp type 136
+	dir in priority 1 ptype main
+src ::/0 dst ::/0 proto ipv6-icmp type 136
+	dir out priority 1 ptype main
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+default via 192.1.3.254 dev eth0
+192.1.3.0/24 dev eth0 proto kernel scope link src 192.1.3.209
+2001:db8:1:3::/64 dev eth0 proto kernel metric 256
+fe80::/64 dev eth0 proto kernel metric 256
+default via 2001:db8:1:3::254 dev eth0 metric 1
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+road #
+ 

@@ -1,0 +1,4 @@
+Basic pluto with IKEv2 using PSK on the initiator (west), and on the responder.
+
+Identical to ikev2-algo-ike-sha2-02, but now we use ike=aes-sha2_256 instead of aes128-sha2_256
+

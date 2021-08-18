@@ -1,0 +1,19 @@
+/testing/guestbin/swan-prep
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add west-east
+002 "west-east": added IKEv2 connection
+east #
+ echo "initdone"
+initdone
+east #
+ # Confirm expired IPsec SA will not trigger a liveness probe
+east #
+ grep "liveness: .* was replaced by "  /tmp/pluto.log
+| liveness: #2 was replaced by #3 so not needed
+east #
+ 

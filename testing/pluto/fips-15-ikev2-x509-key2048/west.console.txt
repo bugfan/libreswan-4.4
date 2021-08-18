@@ -1,0 +1,40 @@
+/testing/guestbin/swan-prep --x509 --x509name key2032
+Preparing X.509 files
+west #
+ fipscheck
+usage: fipscheck [-s <hmac-suffix>] <paths-to-files>
+fips mode is off
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-eastnet-ikev2
+002 "westnet-eastnet-ikev2": added IKEv2 connection
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec whack --impair delete-on-retransmit
+west #
+ # should fail - our FIPS code requires 2048 minimum key
+west #
+ ipsec auto --up westnet-eastnet-ikev2
+1v2 "westnet-eastnet-ikev2" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-ikev2" #1: sent IKE_SA_INIT request
+1v2 "westnet-eastnet-ikev2" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+002 "westnet-eastnet-ikev2" #2: IMPAIR: retransmit so deleting SA
+002 "westnet-eastnet-ikev2" #1: deleting state (STATE_PARENT_I2) and NOT sending notification
+003 "westnet-eastnet-ikev2" #2: reschedule pending CHILD SA - the IKE SA #1 is going away
+002 "westnet-eastnet-ikev2" #1: deleting IKE SA but connection is supposed to remain up; schedule EVENT_REVIVE_CONNS
+west #
+ echo done
+done
+west #
+ ipsec stop
+Redirecting to: [initsystem]
+west #
+ hostname | grep east > /dev/null && grep "FIPS: Rejecting" /tmp/pluto.log
+west #
+ 

@@ -1,0 +1,41 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+west #
+ certutil -D -n east -d sql:/etc/ipsec.d
+west #
+ cp policies/* /etc/ipsec.d/policies/
+west #
+ echo "192.1.2.0/24" >> /etc/ipsec.d/policies/private-or-clear
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ # give OE policies time to load
+west #
+ ../../guestbin/wait-for.sh --match 'loaded 10,' -- ipsec auto --status
+000 Total IPsec connections: loaded 10, active 0
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec whack --oppohere 192.1.2.45 --oppothere 192.1.2.23
+002 initiate on demand from 192.1.2.45:8 to 192.1.2.23:0 proto=1 because: whack
+002 can't find expected bare shunt to delete: 192.1.2.45/32:0 -ICMP-> 192.1.2.23/32:0
+1v2 "private-or-clear#192.1.2.0/24"[1] ...192.1.2.23 #1: initiating IKEv2 connection
+003 "private-or-clear#192.1.2.0/24"[1] ...192.1.2.23 #1: authenticated using RSA with SHA2_512 and peer certificate 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org' issued by CA 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=Libreswan test CA for mainca, E=testing@libreswan.org'
+002 "private-or-clear#192.1.2.0/24"[1] ...192.1.2.23 #2: negotiated connection [192.1.2.45-192.1.2.45:0-65535 0] -> [192.1.2.23-192.1.2.23:0-65535 0]
+west #
+ ../../guestbin/ping-once.sh --up 192.1.2.23
+up
+west #
+ # should show traffic
+west #
+ ipsec whack --trafficstatus
+006 #2: "private-or-clear#192.1.2.0/24"[1] ...192.1.2.23, type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org'
+west #
+ echo done
+done
+west #
+ 

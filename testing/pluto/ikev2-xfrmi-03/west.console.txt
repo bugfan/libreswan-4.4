@@ -1,0 +1,59 @@
+ip route get to 192.0.2.254 | grep eth1 && ip route del 192.0.2.0/24 via 192.1.2.23 dev eth1
+192.0.2.254 via 192.1.2.23 dev eth1 src 192.1.2.45 uid 0 
+west #
+ /testing/guestbin/swan-prep
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-eastnet
+002 "westnet-eastnet": added IKEv2 connection
+west #
+ ipsec auto --up westnet-eastnet
+1v2 "westnet-eastnet" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet" #1: sent IKE_SA_INIT request
+1v2 "westnet-eastnet" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+003 "westnet-eastnet" #1: authenticated using authby=secret and peer ID_FQDN '@east'
+002 "westnet-eastnet" #2: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "westnet-eastnet" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE NATOA=none NATD=none DPD=passive}
+west #
+ ../../guestbin/ping-once.sh --up -I 192.0.1.254 192.0.2.254
+up
+west #
+ ../../guestbin/ping-once.sh --up -I 192.0.1.254 192.0.2.254
+up
+west #
+ ../../guestbin/ping-once.sh --up -I 192.0.1.254 192.0.2.254
+up
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec whack --trafficstatus
+006 #2: "westnet-eastnet", type=ESP, add_time=1234567890, inBytes=252, outBytes=252, id='@east'
+west #
+ ip -s link show ipsec1
+X: ipsec1@eth1: <NOARP,UP,LOWER_UP> mtu 1500 state UNKNOWN
+    RX: bytes  packets  errors  dropped overrun mcast   
+    252        3        0       0       0       0       
+    TX: bytes  packets  errors  dropped carrier collsns 
+    252        3        0       0       0       0       
+west #
+ ip rule show
+0:	from all lookup local
+32766:	from all lookup main
+32767:	from all lookup default
+west #
+ ip route show table 50
+Error: ipv4: FIB table does not exist.
+Dump terminated
+west #
+ ip route
+default via 192.1.2.254 dev eth1
+192.0.1.0/24 dev eth0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 dev ipsec1 scope link
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+west #
+ 

@@ -1,0 +1,16 @@
+/testing/guestbin/swan-prep --nokeys
+Creating empty NSS database
+west #
+ rm -f /tmp/newhostkey.txt
+west #
+ ckaid=$(ipsec newhostkey 2>&1 | grep "showhostkey" | sed "s/^.*ckaid //")
+west #
+ ipsec showhostkey --list
+< 1> RSA keyid: <<KEYID#1>> ckaid: <<CKAID#1>>
+west #
+ ipsec showhostkey --left --ckaid "$ckaid"
+	# rsakey <<KEYID#1>>
+	leftrsasigkey=<<RSASIGKEY#1>>
+west #
+ 
+

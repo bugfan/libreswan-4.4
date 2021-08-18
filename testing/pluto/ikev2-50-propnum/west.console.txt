@@ -1,0 +1,84 @@
+../../guestbin/swan-prep
+west #
+ # confirm that the network is alive
+west #
+ ../../guestbin/wait-until-alive 192.0.2.254 -I 192.0.1.254
+destination 192.0.2.254 -I 192.0.1.254 is alive
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec whack --impair suppress-retransmits
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec auto --add westnet-eastnet-propnum
+002 "westnet-eastnet-propnum": added IKEv2 connection
+west #
+ ipsec auto --up westnet-eastnet-propnum
+1v2 "westnet-eastnet-propnum" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-propnum" #1: sent IKE_SA_INIT request
+1v2 "westnet-eastnet-propnum" #1: sent IKE_AUTH request {auth=IKEv2 cipher=3DES_CBC_192 integ=HMAC_MD5_96 prf=HMAC_MD5 group=MODP2048}
+003 "westnet-eastnet-propnum" #1: authenticated using RSA with SHA2_512 and preloaded certificate '@east'
+002 "westnet-eastnet-propnum" #2: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "westnet-eastnet-propnum" #2: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_CBC_128-HMAC_SHA1_96 NATOA=none NATD=none DPD=passive}
+west #
+ ipsec auto --delete westnet-eastnet-propnum
+002 "westnet-eastnet-propnum": terminating SAs using this connection
+002 "westnet-eastnet-propnum" #2: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "westnet-eastnet-propnum" #2: ESP traffic information: in=0B out=0B
+002 "westnet-eastnet-propnum" #1: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+west #
+ : dump all emitted and parsed proposals onto the console
+west #
+ : weird pattern deals with optional length field
+west #
+ grep -v '| helper' /tmp/pluto.log | grep -B 1 -e '|    last proposal: ' -A 3 -e '|    prop #: '
+| ****emit IKEv2 Proposal Substructure Payload:
+|    last proposal: v2_PROPOSAL_NON_LAST (0x2)
+|    prop #: 1 (01)
+|    proto ID: IKEv2_SEC_PROTO_IKE (0x1)
+|    spi size: 0 (00)
+|    # transforms: 5 (05)
+--
+| ****emit IKEv2 Proposal Substructure Payload:
+|    last proposal: v2_PROPOSAL_LAST (0x0)
+|    prop #: 2 (02)
+|    proto ID: IKEv2_SEC_PROTO_IKE (0x1)
+|    spi size: 0 (00)
+|    # transforms: 4 (04)
+--
+| ****parse IKEv2 Proposal Substructure Payload:
+|    last proposal: v2_PROPOSAL_LAST (0x0)
+|    length: 40 (00 28)
+|    prop #: 2 (02)
+|    proto ID: IKEv2_SEC_PROTO_IKE (0x1)
+|    spi size: 0 (00)
+|    # transforms: 4 (04)
+--
+| *****emit IKEv2 Proposal Substructure Payload:
+|    last proposal: v2_PROPOSAL_NON_LAST (0x2)
+|    prop #: 1 (01)
+|    proto ID: IKEv2_SEC_PROTO_ESP (0x3)
+|    spi size: 4 (04)
+|    # transforms: 4 (04)
+--
+| *****emit IKEv2 Proposal Substructure Payload:
+|    last proposal: v2_PROPOSAL_LAST (0x0)
+|    prop #: 2 (02)
+|    proto ID: IKEv2_SEC_PROTO_ESP (0x3)
+|    spi size: 4 (04)
+|    # transforms: 3 (03)
+--
+| ***parse IKEv2 Proposal Substructure Payload:
+|    last proposal: v2_PROPOSAL_LAST (0x0)
+|    length: 40 (00 28)
+|    prop #: 1 (01)
+|    proto ID: IKEv2_SEC_PROTO_ESP (0x3)
+|    spi size: 4 (04)
+|    # transforms: 3 (03)
+west #
+ 

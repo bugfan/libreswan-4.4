@@ -1,0 +1,76 @@
+/testing/guestbin/swan-prep
+west #
+ dmesg -n 6
+west #
+ # nohup tcpdump -i eth1 -s 65535 -X -vv -nn tcp > OUTPUT/west.tcpdump &
+west #
+ nohup dumpcap -i eth1 -w /tmp/west.pcap > OUTPUT/west.dumpcap &
+[x] PID
+west #
+ # confirm that the network is alive
+west #
+ ../../guestbin/wait-until-alive -I 192.0.1.254 192.0.2.254
+destination -I 192.0.1.254 192.0.2.254 is alive
+west #
+ # make sure that clear text does not get through
+west #
+ iptables -F
+west #
+ iptables -X
+west #
+ # does this block the ping response?
+west #
+ # iptables -A INPUT -i eth1 -s 192.0.2.0/24 -j DROP
+west #
+ iptables -A OUTPUT -o eth1 -p tcp --dport 4500 -j ACCEPT
+west #
+ # confirm with a ping
+west #
+ ../../guestbin/ping-once.sh --down -I 192.0.1.254 192.0.2.254
+up UNEXPECTED
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec whack --impair suppress-retransmits
+west #
+ ../../guestbin/libreswan-up-down.sh westnet-eastnet-ikev2 -I 192.0.1.254 192.0.2.254
+002 "westnet-eastnet-ikev2": added IKEv2 connection
+1v2 "westnet-eastnet-ikev2" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-ikev2" #1: sent IKE_SA_INIT request
+1v2 "westnet-eastnet-ikev2" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+003 "westnet-eastnet-ikev2" #1: authenticated using RSA with SHA2_512 and preloaded certificate '@east'
+002 "westnet-eastnet-ikev2" #2: negotiated connection [192.0.1.0-192.0.1.255:0-65535 0] -> [192.0.2.0-192.0.2.255:0-65535 0]
+004 "westnet-eastnet-ikev2" #2: IPsec SA established tunnel mode {ESPinTCP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE NATOA=none NATD=none DPD=passive}
+destination -I 192.0.1.254 192.0.2.254 is alive
+002 "westnet-eastnet-ikev2": terminating SAs using this connection
+002 "westnet-eastnet-ikev2" #2: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "westnet-eastnet-ikev2" #2: ESP traffic information: in=84B out=84B
+002 "westnet-eastnet-ikev2" #1: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+002 "westnet-eastnet-ikev2": terminating SAs using this connection
+west #
+ ipsec look
+west NOW
+XFRM state:
+XFRM policy:
+XFRM done
+IPSEC mangle TABLES
+NEW_IPSEC_CONN mangle TABLES
+ROUTING TABLES
+default via 192.1.2.254 dev eth1
+192.0.1.0/24 dev eth0 proto kernel scope link src 192.0.1.254
+192.0.2.0/24 via 192.1.2.23 dev eth1
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.45
+NSS_CERTIFICATES
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+west #
+ ipsec stop
+Redirecting to: [initsystem]
+west #
+ 

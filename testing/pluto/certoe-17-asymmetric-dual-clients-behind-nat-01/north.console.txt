@@ -1,0 +1,19 @@
+echo "init done, nothing to do on north. It will not use IPsec"
+init done, nothing to do on north. It will not use IPsec
+north #
+ echo "north is sending a ping"
+north is sending a ping
+north #
+ ../../guestbin/ping-once.sh --up -I 192.1.3.33 192.1.2.23
+up
+north #
+ echo "waiting while road sets up a tunnel to confirm there is no interference"
+waiting while road sets up a tunnel to confirm there is no interference
+north #
+ echo "north is sending another ping"
+north is sending another ping
+north #
+ ../../guestbin/ping-once.sh --up -I 192.1.3.33 192.1.2.23
+up
+north #
+ 

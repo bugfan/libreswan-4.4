@@ -1,0 +1,14 @@
+/testing/guestbin/swan-prep --userland strongswan
+east #
+ ../../guestbin/strongswan-start.sh
+east #
+ echo "initdone"
+initdone
+east #
+ # replay-window will show up as 0 when ESN is enabled due to kernel bug.
+east #
+ ip xfrm state |grep replay-window
+	replay-window 0 flag af-unspec esn
+	replay-window 0 flag af-unspec esn
+east #
+ 

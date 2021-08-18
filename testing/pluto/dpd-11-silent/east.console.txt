@@ -1,0 +1,18 @@
+/testing/guestbin/swan-prep
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add west-east
+002 "west-east": added IKEv1 connection
+east #
+ echo "initdone"
+initdone
+east #
+ # There should not be any R_U_THERE packets from either end because we are not idle
+east #
+ grep R_U_THERE /tmp/pluto.log
+east #
+ 

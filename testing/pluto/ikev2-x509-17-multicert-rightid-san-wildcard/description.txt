@@ -1,0 +1,3 @@
+Test for wildcard ID and certs on east, which has rightid=@*.testing.libreswan.org
+
+This requires you tarzan, me jane support. Introduced in 3.23

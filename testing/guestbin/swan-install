@@ -1,0 +1,49 @@
+#!/bin/sh
+
+# we run with -x so : works instead of echo for output (not logging)
+set -eux
+
+if [ -r LIBRESWAN-GPG-KEY.txt ]; then
+    cat <<EOF
+
+$PWD is a top-level source directory.
+Not CDing to /source
+
+EOF
+else
+    cd /source
+fi
+
+if [ -f /usr/libexec/ipsec/pluto ]; then
+    : ABORT: existing pluto found at /usr/libexec/ipsec/pluto
+    exit 1
+fi
+
+pidof pluto >/dev/null && ipsec setup stop 2> /dev/null
+
+targets="install-base module_install"
+make "$@" $targets
+
+# ensure selinux bits
+restorecon /usr/local/sbin -Rv
+restorecon /usr/local/libexec/ipsec -Rv
+
+# disable autostarting via service or systemd
+if [ -x /usr/bin/systemctl -o \
+    -x /usr/sbin/systemctl -o \
+    -x /sbin/systemctl ]; then
+    sed -i "s/Restart=always/Restart=no/" \
+	/lib/systemd/system/ipsec.service
+    systemctl disable ipsec.service
+    systemctl daemon-reload
+else
+    service ipsec disable
+fi
+
+# generate up-to-date FIPS .hmac files
+
+if which fipshmac > /dev/null 2>&1; then
+    make install-fipshmac
+fi
+
+echo "$0 finished on $(hostname) at $(date)"

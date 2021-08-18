@@ -1,0 +1,35 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+west #
+ certutil -d sql:/etc/ipsec.d -D -n "Libreswan test CA for mainca - Libreswan"
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-eastnet-x509
+002 "westnet-eastnet-x509": added IKEv2 connection
+west #
+ echo "initdone"
+initdone
+west #
+ # expected to fail
+west #
+ ipsec whack --impair delete-on-retransmit
+west #
+ ipsec auto --up westnet-eastnet-x509
+1v2 "westnet-eastnet-x509" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-x509" #1: sent IKE_SA_INIT request
+1v2 "westnet-eastnet-x509" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+002 "westnet-eastnet-x509" #1: IKE SA authentication request rejected by peer: AUTHENTICATION_FAILED
+000 "westnet-eastnet-x509" #2: scheduling retry attempt 1 of an unlimited number, but releasing whack
+west #
+ echo done
+done
+west #
+ # should confirm failure
+west #
+ hostname | grep east && grep "Signature check" /tmp/pluto.log
+west #
+ 

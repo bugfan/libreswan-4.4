@@ -1,0 +1,21 @@
+/testing/guestbin/swan-prep
+east #
+ ip addr add 192.0.200.254/24 dev eth0:1
+east #
+ ip route add 192.0.100.0/24 via 192.1.2.45  dev eth1
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add ikev2-base
+002 "ikev2-base": added IKEv2 connection
+east #
+ ipsec auto --add ikev2-esp=aes-sha1-modp1536
+002 "ikev2-esp=aes-sha1-modp1536": added IKEv2 connection
+east #
+ echo "initdone"
+initdone
+east #
+ 

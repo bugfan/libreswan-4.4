@@ -1,0 +1,8 @@
+IKEv2 REDIRECT Mechanism with active redirect with
+roadwarriors.
+
+two road warriors, north and road connect to east, shortly after that they are
+redirected to west with --redirect whack command.
+
+Because north and road are redirected at once, they can establish in different order,
+so we do some output massaging to that does not matter.

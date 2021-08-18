@@ -1,0 +1,6 @@
+ocsp: west sends REVOKED cert
+      east sends OK cert
+
+ikev2
+	successful ocsp response - revoked
+	connection fail

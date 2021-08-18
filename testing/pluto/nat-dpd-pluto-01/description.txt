@@ -1,0 +1,2 @@
+NAT test with DPD enabled on east. North sends pings, so there
+should NOT be any DPD probes as the IPsec SA is active.

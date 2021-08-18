@@ -1,0 +1,15 @@
+iptables -t nat -F
+nic #
+ iptables -F
+nic #
+ hostname | grep east > /dev/null && ipsec whack --trafficstatus
+nic #
+ # A tunnel should have established
+nic #
+ hostname | grep east > /dev/null && grep "negotiated connection" /tmp/pluto.log
+nic #
+ # you should see both RSA and NULL
+nic #
+ hostname | grep east > /dev/null && grep IKEv2_AUTH_ /tmp/pluto.log
+nic #
+ 

@@ -1,0 +1,38 @@
+/testing/guestbin/swan-prep
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec auto --add westnet-eastnet-mismatch
+002 "westnet-eastnet-mismatch": added IKEv2 connection
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec auto --up westnet-eastnet-mismatch
+1v2 "westnet-eastnet-mismatch" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-mismatch" #1: sent IKE_SA_INIT request
+002 "westnet-eastnet-mismatch" #1: WARNING: '@west' PSK length of 6 bytes is too short for PRF HMAC_SHA2_512 in FIPS mode (32 bytes required)
+1v2 "westnet-eastnet-mismatch" #1: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+002 "westnet-eastnet-mismatch" #2: IKE_AUTH response contained the error notification TS_UNACCEPTABLE
+000 "westnet-eastnet-mismatch" #2: scheduling retry attempt 1 of an unlimited number, but releasing whack
+west #
+ echo done
+done
+west #
+ # this should not match anything
+west #
+ grep v2N_INVALID_MESSAGE_ID /tmp/pluto.log
+west #
+ # this shows we returned the error in IKE_AUTH
+west #
+ grep "exchange type:" /tmp/pluto.log
+|    exchange type: ISAKMP_v2_IKE_SA_INIT (0x22)
+|    exchange type: ISAKMP_v2_IKE_SA_INIT (0x22)
+|    exchange type: ISAKMP_v2_IKE_AUTH (0x23)
+|    exchange type: ISAKMP_v2_IKE_AUTH (0x23)
+|    exchange type: ISAKMP_v2_INFORMATIONAL (0x25)
+west #
+ 

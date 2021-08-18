@@ -1,0 +1,110 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+north #
+ ipsec start
+Redirecting to: [initsystem]
+north #
+ ../../guestbin/wait-until-pluto-started
+north #
+ ipsec auto --add north-east
+002 "north-east": added IKEv2 connection
+north #
+ ipsec whack --impair delete-on-retransmit
+north #
+ ipsec whack --impair revival
+north #
+ echo initdone
+initdone
+north #
+ ipsec auto --up north-east
+1v2 "north-east" #1: initiating IKEv2 connection
+1v2 "north-east" #1: sent IKE_SA_INIT request
+002 "north-east" #1: initiating a redirect to new gateway (address: 192.1.2.44)
+1v2 "north-east" #2: initiating IKEv2 connection
+1v2 "north-east" #2: sent IKE_SA_INIT request
+002 "north-east" #1: deleting state (STATE_IKESA_DEL) and NOT sending notification
+002 "north-east" #1: IMPAIR: skipping revival of connection that is supposed to remain up
+002 "north-east" #2: IMPAIR: retransmit so deleting SA
+002 "north-east" #2: deleting state (STATE_PARENT_I1) and NOT sending notification
+002 "north-east" #2: IMPAIR: skipping revival of connection that is supposed to remain up
+north #
+ echo "1. north connection add+up done"
+1. north connection add+up done
+north #
+ ipsec auto --delete north-east
+002 "north-east": terminating SAs using this connection
+north #
+ echo "1. north connection delete done"
+1. north connection delete done
+north #
+ ipsec auto --add north-east
+002 "north-east": added IKEv2 connection
+north #
+ ipsec auto --up north-east
+1v2 "north-east" #3: initiating IKEv2 connection
+1v2 "north-east" #3: sent IKE_SA_INIT request
+002 "north-east" #3: initiating a redirect to new gateway (address: 192.1.2.46)
+1v2 "north-east" #4: initiating IKEv2 connection
+1v2 "north-east" #4: sent IKE_SA_INIT request
+002 "north-east" #3: deleting state (STATE_IKESA_DEL) and NOT sending notification
+002 "north-east" #3: IMPAIR: skipping revival of connection that is supposed to remain up
+002 "north-east" #4: IMPAIR: retransmit so deleting SA
+002 "north-east" #4: deleting state (STATE_PARENT_I1) and NOT sending notification
+002 "north-east" #4: IMPAIR: skipping revival of connection that is supposed to remain up
+north #
+ echo "2. north connection add+up done"
+2. north connection add+up done
+north #
+ ipsec auto --delete north-east
+002 "north-east": terminating SAs using this connection
+north #
+ echo "2. north connection delete done"
+2. north connection delete done
+north #
+ ipsec auto --add north-east
+002 "north-east": added IKEv2 connection
+north #
+ ipsec auto --up north-east
+1v2 "north-east" #5: initiating IKEv2 connection
+1v2 "north-east" #5: sent IKE_SA_INIT request
+002 "north-east" #5: initiating a redirect to new gateway (address: 192.1.2.45)
+1v2 "north-east" #6: initiating IKEv2 connection
+1v2 "north-east" #6: sent IKE_SA_INIT request
+002 "north-east" #5: deleting state (STATE_IKESA_DEL) and NOT sending notification
+002 "north-east" #5: IMPAIR: skipping revival of connection that is supposed to remain up
+1v2 "north-east" #6: sent IKE_AUTH request {auth=IKEv2 cipher=AES_GCM_16_256 integ=n/a prf=HMAC_SHA2_512 group=MODP2048}
+003 "north-east" #6: authenticated using RSA with SHA2_512 and peer certificate 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org' issued by CA 'C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=Libreswan test CA for mainca, E=testing@libreswan.org'
+002 "north-east" #7: received INTERNAL_IP4_ADDRESS 192.0.2.101
+002 "north-east" #7: received INTERNAL_IP4_DNS 1.2.3.4
+002 "north-east" #7: received INTERNAL_IP4_DNS 5.6.7.8
+002 "north-east" #7: up-client output: updating resolvconf
+002 "north-east" #7: negotiated connection [192.0.2.101-192.0.2.101:0-65535 0] -> [0.0.0.0-255.255.255.255:0-65535 0]
+004 "north-east" #7: IPsec SA established tunnel mode {ESP=>0xESPESP <0xESPESP xfrm=AES_GCM_16_256-NONE NATOA=none NATD=none DPD=passive}
+north #
+ echo "3. north connection add+up done"
+3. north connection add+up done
+north #
+ sleep 1
+north #
+ # should be connected to west!
+north #
+ ../../guestbin/ping-once.sh --up 192.0.2.254
+up
+north #
+ ipsec whack --trafficstatus
+006 #7: "north-east", type=ESP, add_time=1234567890, inBytes=84, outBytes=84, id='C=CA, ST=Ontario, L=Toronto, O=Libreswan, OU=Test Department, CN=east.testing.libreswan.org, E=user-east@testing.libreswan.org', lease=192.0.2.101/32
+north #
+ ipsec auto --delete north-east
+002 "north-east": terminating SAs using this connection
+002 "north-east" #7: deleting state (STATE_V2_ESTABLISHED_CHILD_SA) and sending notification
+005 "north-east" #7: ESP traffic information: in=84B out=84B
+002 "north-east" #7: down-client output: restoring resolvconf
+002 "north-east" #6: deleting state (STATE_V2_ESTABLISHED_IKE_SA) and sending notification
+north #
+ echo "3. north connection delete done"
+3. north connection delete done
+north #
+ ipsec whack --trafficstatus
+north #
+ ipsec whack --shutdown
+

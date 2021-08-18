@@ -1,0 +1,16 @@
+/testing/guestbin/swan-prep
+east #
+ # confirm that the network is alive
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add roadnet-eastnet-ipv4-psk-ikev2
+002 "roadnet-eastnet-ipv4-psk-ikev2": added IKEv2 connection
+east #
+ echo "initdone"
+initdone
+east #
+ 

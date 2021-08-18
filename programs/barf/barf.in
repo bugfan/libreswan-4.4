@@ -1,0 +1,361 @@
+#!@SHELL_BINARY@
+# dump assorted information of use in debugging
+# Copyright (C) 1998, 1999  Henry Spencer.
+# Copyright (C) 2019 Paul Wouters <pwouters@redhat.com>
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.  See <https://www.gnu.org/licenses/gpl2.txt>.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+
+LC_ALL=C export LC_ALL
+
+LOGS=${LOGS-/var/log}
+me="ipsec barf"
+
+# kludge to produce no barf output mentioning policygroups if none are present.
+# This will not catch ".file" policygroups.
+PREPOLICIES=@IPSEC_CONFDDIR@/policies
+if [ -n "$(ls ${PREPOLICIES} 2>/dev/null)" ]; then
+    POLICIES=${PREPOLICIES}
+fi
+
+# message patterns that start relevant parts of logs
+fstart='Starting Libreswan'
+pstart='Starting Pluto'
+
+case "${1}" in
+    --help)
+	echo "Usage: ipsec barf"
+	exit 0
+	;;
+    --version)
+	echo "$me $IPSEC_VERSION"
+	exit 0
+	;;
+esac
+
+# log-location guesser, results in ${findlog_file} and ${findlog_startline}
+# Fine point:  startline is the *last* line containing "string", or
+# failing that, the *first* line containing "fallbackstring".
+findlog() {	# findlog string fallbackstring possiblefile ...
+    s="${1}"
+    shift
+    t="${1}"
+    shift
+    # try the suggested files first
+    for f
+    do
+	if [ -s ${LOGS}/${f} -a \
+	    -f ${LOGS}/${f} -a \
+	    grep -E -q "${s}" ${LOGS}/${f} 2>/dev/null ]
+	then
+	    # aha, this one has it
+	    findlog_file=${LOGS}/${f}
+	    findlog_startline=$(grep -E -n "${s}" ${LOGS}/${f} | \
+		sed -n '$s/:.*//p')
+	    return 0
+	fi
+    done
+    for f
+    do
+	if [ -s ${LOGS}/${f} -a \
+	    -f ${LOGS}/${f} -a \
+	    grep -E -q "${t}" ${LOGS}/${f} 2>/dev/null ]
+	then
+	    # aha, this one has it
+	    findlog_file=${LOGS}/${f}
+	    findlog_startline=$(grep -E -n "${t}" ${LOGS}/${f} | \
+		sed -n '1s/:.*//p')
+	    return 0
+	fi
+    done
+    # nope, resort to a search, newest first, of uncompressed logs
+    for f in $(ls -t ${LOGS} | grep -E -v 'lastlog|tmp|^mail|\.(gz|Z)$')
+	do
+	if [ -f ${LOGS}/${f} -a \
+	    ! -d ${LOGS}/${f} -a \
+	    grep -E -q "${s}" ${LOGS}/${f} 2>/dev/null ]
+	then
+	    # found it
+	    findlog_file=${LOGS}/${f}
+	    findlog_startline=$(grep -E -n "${s}" ${LOGS}/${f} | \
+		sed -n '$s/:.*//p')
+	    return 0
+	fi
+    done
+    for f in $(ls -t ${LOGS} | grep -E -v 'lastlog|tmp|^mail|\.(gz|Z)$')
+    do
+	if [ -s ${LOGS}/${f} -a \
+	    -f ${LOGS}/${f} -a \
+	    grep -E -q "${t}" ${LOGS}/${f} 2>/dev/null ]
+	then
+	    # found it
+	    findlog_file=${LOGS}/${f}
+	    findlog_startline=$(grep -E -n "${t}" ${LOGS}/${f} | \
+		sed -n '1s/:.*//p')
+	    return 0
+	fi
+    done
+    # echo "$0: unable to find ${LOGS}/${1} or local equivalent" >&2
+    findlog_file=/dev/null
+    findlog_startline=1	# arbitrary
+}
+
+if [ ! -x /usr/bin/journalctl -a ! -x /bin/journalctl ]; then
+    # no systemd, need to figure out log file location
+    findlog "$pstart" "Pluto" secure auth.log daemon.log debug
+    if [ "${findlog_file}" = "/dev/null" ]; then
+	echo "Unable to find Pluto messages, typically found in /var/log/secure or equivalent. You may need to run Libreswan for the first time; alternatively, your log files have been emptied (ie, logrotate) or we do not understand your logging configuration."
+	fi
+	plog=${findlog_file}
+	pline=${findlog_startline}
+fi
+
+# /lib/modules examiner
+modulegoo() {
+    set +x
+    for d in $(ls /lib/modules)
+    do
+	if test -d /lib/modules/${d}
+	then
+	    f=/lib/modules/${d}/${1}
+	    if [ -f ${f} ]; then
+		nm -g ${f} | grep -E "${2}"
+	    else
+		echo
+	    fi | sed "s;^;${d}: ;"
+	fi
+    done
+    set -x
+}
+
+# advanced shell deviousness to get dividers into output
+_________________________() {
+    ${2}	# something to do nothing and not echo anything
+}
+
+exec 2>&1		# stderr on stdout, so errors go into main output
+
+hostname
+date
+set -x
+_________________________ version
+ipsec --version
+_________________________ /proc/version
+cat /proc/version
+if [ -r /proc/sys/net/core/xfrm_acq_expires ]; then
+    _________________________ ip-xfrm-state
+    ip xfrm state
+    _________________________ ip-xfrm-policy
+    ip xfrm policy
+    _________________________ cat-proc-net-xfrm_stat
+    cat /proc/net/xfrm_stat
+fi
+_________________________ ip-l2tp-tunnel
+if [ -d /sys/module/l2tp_core ]; then
+    ip l2tp show tunnel
+    _________________________ ip-l2tp-session
+    ip l2tp show session
+fi
+if [ -d /sys/module/ip_vti ]; then
+    _________________________ ip-tunnel
+    ip -s tunnel show
+fi
+_________________________ /proc/crypto
+if [ -r /proc/crypto ]; then
+    cat /proc/crypto
+fi
+__________________________/proc/sys/net/core/xfrm-star
+for i in /proc/sys/net/core/xfrm_*
+do
+    echo -n "${i}: "
+    cat $i
+done
+_________________________ /proc/sys/net/ipsec-star
+if [ -d /proc/sys/net/ipsec ]; then
+    ( cd /proc/sys/net/ipsec && grep -E '^' * )
+fi
+_________________________ ipsec/status
+ipsec whack --status
+_________________________ ip-addr-list
+ip addr list
+_________________________ ip-route-list-table-all
+ip route list table all
+_________________________ ip-rule-list
+ip rule list
+_________________________ ipsec_verify
+ipsec verify --nocolour
+_________________________ ipsec/directory
+ipsec --directory
+_________________________ hostname/fqdn
+hostname --fqdn
+_________________________ hostname/ipaddress
+hostname --ip-address
+_________________________ uptime
+uptime
+_________________________ ps
+# -i ppid picks up the header
+ps alxwf | grep -E -i 'ppid|pluto|ipsec'
+_________________________ ipsec/conf
+ipsec readwriteconf --config @IPSEC_CONF@
+_________________________ ipsec/secrets
+cat @IPSEC_SECRETS_FILE@ | ipsec _secretcensor
+_________________________ ipsec/listall
+ipsec whack --listall
+_________________________ nss/contents
+certutil -L -d sql:@IPSEC_NSSDIR@
+_________________________ nss/crls
+crlutil -L -d sql:@IPSEC_NSSDIR@
+if [ -n "${POLICIES}" ]; then
+    for policy in ${POLICIES}/*
+    do
+	base=$(basename ${policy});
+	_________________________ ipsec/policies/${base}
+	cat ${policy}
+    done
+fi
+_________________________ ipsec/ls-execdir
+ls -l ${IPSEC_EXECDIR}
+_________________________ /proc/net/dev
+cat /proc/net/dev
+_________________________ /proc/net/route
+cat /proc/net/route
+_________________________ /proc/sys/net/ipv4/ip_no_pmtu_disc
+cat /proc/sys/net/ipv4/ip_no_pmtu_disc
+_________________________ /proc/sys/net/ipv4/ip_forward
+cat /proc/sys/net/ipv4/ip_forward
+_________________________ /proc/sys/net/ipv4/tcp_ecn
+cat /proc/sys/net/ipv4/tcp_ecn
+_________________________ /proc/sys/net/ipv4/conf/star-rp_filter
+( cd /proc/sys/net/ipv4/conf && grep -E '^' */rp_filter )
+_________________________ /proc/sys/net/ipv4/conf/star-star-redirects
+( cd /proc/sys/net/ipv4/conf && grep -E '^' */*redirects )
+_________________________ /proc/sys/net/ipv4/tcp_window_scaling
+cat /proc/sys/net/ipv4/tcp_window_scaling
+_________________________ /proc/sys/net/ipv4/tcp_adv_win_scale
+cat /proc/sys/net/ipv4/tcp_adv_win_scale
+_________________________ uname-a
+uname -a
+_________________________ config-built-with
+if [ -r /proc/config_built_with ]; then
+    cat /proc/config_built_with
+fi
+_________________________ distro-release
+for distro in /etc/redhat-release /etc/debian-release /etc/SuSE-release /etc/mandrake-release /etc/mandriva-release /etc/gentoo-release
+do
+    if [ -f ${distro} ]; then
+        cat ${distro}
+    fi
+
+done
+_________________________ iptables
+if [ -e /proc/net/ip_tables_names ]; then
+    if [ -r /sbin/iptables-save -o -r /usr/sbin/iptables-save ]; then
+	iptables-save --modprobe=/dev/null
+    else
+	if [ -r /sbin/iptables -o -r /usr/sbin/iptables ]; then
+	    iptables -L -v -n
+	    _________________________ iptables-nat
+	    grep ^nat /proc/net/ip_tables_names >/dev/null 2>&1 && \
+		iptables -t nat -L -v -n
+	    _________________________ iptables-mangle
+	    grep ^mangle /proc/net/ip_tables_names >/dev/null 2>&1 && \
+	    iptables -t mangle -L -v -n
+	fi
+    fi
+fi
+_________________________ ip6tables
+if [ -e ip6_tables_names ]; then
+    if [ -r /sbin/ip6tables-save -o -r /usr/sbin/ip6tables-save ]; then
+	ip6tables-save --modprobe=/dev/null
+    else
+	if [ -r /sbin/ip6tables -o -r /usr/sbin/ip6tables ]; then
+	    [ -e /proc/net/ip_tables_names ] && ip6tables -L -v -n
+	    # There is no IPv6 NAT yet (hopefully that will remain so)
+			_________________________ ip6tables-mangle
+			grep ^mangle /proc/net/ip6_tables_names >/dev/null 2>&1 && \
+			    ip6tables -t mangle -L -v -n
+	fi
+    fi
+fi
+_________________________ /proc/modules
+if [ -f /proc/modules ]; then
+    cat /proc/modules
+else
+    echo "kernel without module support"
+fi
+_________________________ usr/src/linux/.config
+if [ -f /proc/config.gz ]; then
+    zcat /proc/config.gz | grep -E 'IPSEC|ESP|CONFIG_NET_KEY|CONFIG_INET|CONFIG_IP|_XFRM'
+elif [ -f /lib/modules/$(uname -r)/build/.config ]; then
+    cat /lib/modules/$(uname -r)/build/.config | grep -E 'IPSEC|ESP|CONFIG_NET_KEY|CONFIG_INET|CONFIG_IP|_XFRM'
+else
+    echo "no .config file found, cannot list kernel properties"
+fi
+if [ -f /etc/syslog.conf ]; then
+    _________________________ etc/syslog.conf
+    cat /etc/syslog.conf
+fi
+if [ -f /etc/syslog-ng/syslog-ng.conf ]; then
+    _________________________ etc/syslog-ng/syslog-ng.conf
+    cat /etc/syslog-ng/syslog-ng.conf
+fi
+if [ -f /etc/rsyslog.conf ]; then
+    _________________________ etc/rsyslog.conf
+    cat /etc/rsyslog.conf
+fi
+_________________________ etc/resolv.conf
+cat /etc/resolv.conf
+_________________________ lib/modules-ls
+ls -ltr /lib/modules
+_________________________ fipscheck
+cat /proc/sys/crypto/fips_enabled
+_________________________ /proc/ksyms-netif_rx
+if [ -r /proc/ksyms ]; then
+    grep -E netif_rx /proc/ksyms
+else
+    if [ -r /proc/kallsyms ]; then
+	grep -E netif_rx /proc/kallsyms
+    else
+	echo "broken (redhat/fedora) 2.6 kernel without kallsyms"
+    fi
+fi
+
+_________________________ kern.debug
+if [ -f ${LOGS}/kern.debug ]; then
+    tail -100 ${LOGS}/kern.debug
+fi
+_________________________ klog
+dmesg | grep -E -i "xfrm|ipsec|esp"
+_________________________ plog
+if [ -x /usr/bin/journalctl -o -x /bin/journalctl ]; then
+    journalctl -u ipsec.service --no-pager --since "24 hours ago" | \
+    case "${1}" in
+	--short)
+	    tail -500
+	    ;;
+	*)
+	    cat
+	    ;;
+    esac
+else
+    sed -n ${pline},'$'p ${plog} | \
+	grep -E -i 'pluto' | \
+	case "${1}" in
+	    --short)
+		tail -500
+		;;
+	    *)
+		cat
+		;;
+	esac
+fi
+_________________________ date
+date

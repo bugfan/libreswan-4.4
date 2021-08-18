@@ -1,0 +1,6 @@
+East has a certificate that is not yet valid, west attempts to connect to
+east. This connection should fail.
+
+Oddly enough, NSS tells us "Peer's Certificate has expired" instead of telling
+us "not yet valid".
+

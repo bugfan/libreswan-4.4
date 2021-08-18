@@ -1,0 +1,43 @@
+/testing/guestbin/swan-prep
+west #
+ # confirm that the network is alive
+west #
+ ../../guestbin/wait-until-alive -I 192.0.1.254 192.0.2.254
+destination -I 192.0.1.254 192.0.2.254 is alive
+west #
+ ipsec start
+Redirecting to: [initsystem]
+west #
+ ../../guestbin/wait-until-pluto-started
+west #
+ ipsec whack --impair major-version-bump
+west #
+ ipsec whack --impair delete-on-retransmit
+west #
+ ipsec whack --impair revival
+west #
+ ipsec auto --add westnet-eastnet-ikev2-major
+002 "westnet-eastnet-ikev2-major": added IKEv2 connection
+west #
+ echo "initdone"
+initdone
+west #
+ ipsec auto --up westnet-eastnet-ikev2-major
+1v2 "westnet-eastnet-ikev2-major" #1: initiating IKEv2 connection
+1v2 "westnet-eastnet-ikev2-major" #1: sent IKE_SA_INIT request
+003 "westnet-eastnet-ikev2-major" #1: dropping unexpected IKE_SA_INIT message containing INVALID_MAJOR_VERSION notification; message payloads: N; missing payloads: SA,KE,Ni
+002 "westnet-eastnet-ikev2-major" #1: IMPAIR: retransmit so deleting SA
+002 "westnet-eastnet-ikev2-major" #1: deleting state (STATE_PARENT_I1) and NOT sending notification
+002 "westnet-eastnet-ikev2-major" #1: IMPAIR: skipping revival of connection that is supposed to remain up
+west #
+ echo done
+done
+west #
+ grep INVALID_MAJOR_VERSION /tmp/pluto.log
+|    Notify Message Type: v2N_INVALID_MAJOR_VERSION (0x5)
+"westnet-eastnet-ikev2-major" #1: dropping unexpected IKE_SA_INIT message containing INVALID_MAJOR_VERSION notification; message payloads: N; missing payloads: SA,KE,Ni
+west #
+ grep "INVALID_MAJOR_VERSION" /tmp/pluto.log >/dev/null && echo payload found
+payload found
+west #
+ 

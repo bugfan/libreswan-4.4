@@ -1,0 +1,56 @@
+/testing/guestbin/swan-prep --userland strongswan
+east #
+ #../guestbin/wait-until-alive -I 192.0.1.254 192.0.2.254
+east #
+ ../../guestbin/strongswan-start.sh
+east #
+ ip link set down dev ipsec0 2> /dev/null > /dev/null
+east #
+ ip link del ipsec0 2> /dev/null > /dev/null
+east #
+ #shouldn't charon clean up these two rules ??
+east #
+ ip rule del pref 220 2> /dev/null > /dev/null
+east #
+ ip route del 192.1.2.0/24 dev eth0 table 220 2> /dev/null > /dev/null
+east #
+ ip link add ipsec0 type xfrm if_id 2 dev eth0
+east #
+ # KVM and namespace has this route
+east #
+ ip route del 192.0.1.0/24
+east #
+ ip link set up dev ipsec0
+east #
+ ip route add 192.0.1.0/24 dev ipsec0
+east #
+ swanctl  --load-conns
+loaded connection 'east'
+successfully loaded 1 connections, 0 unloaded
+east #
+ echo "initdone"
+initdone
+east #
+ ip -s link show ipsec0
+X: ipsec0@eth0: <NOARP,UP,LOWER_UP> mtu 1500 state UNKNOWN
+    RX: bytes  packets  errors  dropped overrun mcast   
+    336        4        0       0       0       0       
+    TX: bytes  packets  errors  dropped carrier collsns 
+    336        4        0       0       0       0       
+east #
+ ip rule show
+0:	from all lookup local
+32766:	from all lookup main
+32767:	from all lookup default
+east #
+ ip route
+default via 192.1.2.254 dev eth1
+192.0.1.0/24 dev ipsec0 scope link
+192.0.2.0/24 dev eth0 proto kernel scope link src 192.0.2.254
+192.1.2.0/24 dev eth1 proto kernel scope link src 192.1.2.23
+east #
+ ip route show table 220
+throw 192.0.2.0/24
+throw 192.1.2.0/24
+east #
+ 

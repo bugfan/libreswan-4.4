@@ -1,0 +1,29 @@
+/testing/guestbin/swan-prep --x509
+Preparing X.509 files
+east #
+ ipsec start
+Redirecting to: [initsystem]
+east #
+ ../../guestbin/wait-until-pluto-started
+east #
+ ipsec auto --add nss-cert
+002 "nss-cert": added IKEv1 connection
+east #
+ echo "initdone"
+initdone
+east #
+ certutil -L -d sql:/etc/ipsec.d/
+Certificate Nickname                                         Trust Attributes
+                                                             SSL,S/MIME,JAR/XPI
+east                                                         u,u,u
+Libreswan test CA for mainca - Libreswan                     CT,, 
+west                                                         P,,  
+road                                                         P,,  
+north                                                        P,,  
+hashsha1                                                     P,,  
+west-ec                                                      P,,  
+nic                                                          P,,  
+east #
+ if [ -f /sbin/ausearch ]; then ausearch -r -m avc -ts recent ; fi
+east #
+ 

@@ -1,0 +1,87 @@
+#!@SHELL_BINARY@
+# Pluto control daemon
+# Copyright (C) 1998, 1999, 2001  Henry Spencer.
+# Copyright (C) 2010-2013 Tuomo Soini <tis@foobar.fi>
+# Copyright (C) 2012 Paul Wouters <paul@libreswan.org>
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.  See <https://www.gnu.org/licenses/gpl2.txt>.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+
+PLUTO_OPTIONS=$*
+pidfile=@IPSEC_RUNDIR@/pluto.pid
+execdir=${IPSEC_EXECDIR:-@IPSEC_EXECDIR@}
+
+# create nss if the admin deleted it or the packaging did not create it
+ipsec --checknss
+
+# precautions
+if [ -f ${pidfile} ]; then
+    echo "pluto appears to be running already (\"${pidfile}\" exists), will not start another" | \
+	logger -s -p authpriv.error -t ipsec__plutorun >/dev/null 2>&1
+    exit 1
+fi
+
+# spin off into the background, with our own logging
+echo "Starting Pluto" | logger -p authpriv.error -t ipsec__plutorun >/dev/null 2>&1
+
+# Work around problem with broken shells (e.g. Busybox sh).
+# We are called with stdout & stderr going to a logger process started
+# by "ipsec setup". For some reason, when the below loop runs with
+# stdout & stderr redirected to a new logger, the pipe to the old logger
+# is leaked through to _plutorun as file descriptor 11, and the old
+# logger (and "ipsec setup") can never exit. By closing fds 1 & 2
+# before they can be dup'd to 11, we somehow avoid the problem.
+# This problem may also apply to Ubuntu's dash shell
+# but the workaround has not been tested there.
+exec 1>/dev/null
+exec 2>/dev/null
+
+${execdir}/pluto ${PLUTO_OPTIONS}
+status=$?
+case "$status" in
+    10)
+	echo "pluto apparently already running (?!?), giving up" | \
+	    logger -s -p authpriv.error -t ipsec__plutorun >/dev/null 2>&1
+	exit 0
+	;;
+    137)
+	echo "pluto killed by SIGKILL, terminating without restart or unlock" | \
+	    logger -s -p authpriv.error -t ipsec__plutorun >/dev/null 2>&1
+	rm -f ${pidfile}
+	exit 0
+	;;
+    0)
+	echo "pluto killed by SIGTERM, terminating without restart" | \
+	    logger -s -p authpriv.error -t ipsec__plutorun >/dev/null 2>&1
+	# pluto now does its own unlock for this
+	exit 0
+	;;
+    *)
+	st=${status}
+
+	if [ ${st} -gt 128 ]; then
+	    st="${st} (signal $((${st} - 128)))"
+	fi
+	echo "!pluto failure!:  exited with error status ${st}" | \
+	    logger -s -p authpriv.error -t ipsec__plutorun >/dev/null 2>&1
+	echo "restarting IPsec after pause..." | \
+	    logger -s -p authpriv.error -t ipsec__plutorun >/dev/null 2>&1
+	(
+	    sleep 10
+	    # use start, not restart for now, due to module unloading/loading
+	    # clean up old pidfile so new start will be successful
+	    rm -f ${pidfile}
+	    ipsec setup start
+	) </dev/null >/dev/null 2>&1 &
+	exit 1
+	;;
+esac
+
+exit 0
